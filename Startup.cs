@@ -1,5 +1,6 @@
 using API.Models;
 using API.Repository;
+using API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -39,10 +40,11 @@ namespace API
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserTaskEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<MineEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            services.AddScoped<IMine, MineService>();
             services.AddControllers();
         }
 
-        private static async Task<ICosmoDatabase<T>> InitializeCosmosClientInstanceAsync<T>(IConfigurationSection configurationSection) where T : CosmoModel
+        private static async Task<ICosmosDatabase<T>> InitializeCosmosClientInstanceAsync<T>(IConfigurationSection configurationSection) where T : CosmoModel
         {
             string databaseName = configurationSection.GetSection("DatabaseName").Value;
             string containerName = typeof(T).Name; ;
@@ -52,7 +54,7 @@ namespace API
             CosmosClient client = clientBuilder
                                 .WithConnectionModeDirect()
                                 .Build();
-            var cosmosDbService = new CosmoDatabaseService<T>(client, databaseName, containerName);
+            var cosmosDbService = new CosmosDatabaseService<T>(client, databaseName, containerName);
             DatabaseResponse database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             await database.Database.CreateContainerIfNotExistsAsync(containerName, "/id");
 

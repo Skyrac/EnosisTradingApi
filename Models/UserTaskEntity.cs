@@ -1,18 +1,24 @@
-﻿using Newtonsoft.Json;
-
-namespace API.Models
+﻿namespace API.Models
 {
     public class UserTaskEntity : CosmoModel
     {
-        public int user { get; set; }
+        /// <summary>
+        /// user_id
+        /// </summary>
+        public string user { get; set; }
+        /// <summary>
+        /// click_id
+        /// </summary>
         public string click { get; set; }
+        /// <summary>
+        /// should be user_id?
+        /// </summary>
         public string affiliate { get; set; }
         public string program { get; set; }
         public string status { get; set; }
-
         public float payout { get; set; }
 
-        public UserTaskEntity(int user_id, string click_id, string aff_id, string prog_id, string status, float payout)
+        public UserTaskEntity(string user_id, string click_id, string aff_id, string prog_id, string status, float payout)
         {
             this.user = user_id;
             this.click = click_id;

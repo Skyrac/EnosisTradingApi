@@ -1,17 +1,18 @@
 ﻿using API.Models;
 using API.Utility;
 using Microsoft.Azure.Cosmos;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.Repository
 {
-    public class CosmoDatabaseService<T> : ICosmoDatabase<T>
+    public class CosmosDatabaseService<T> : ICosmosDatabase<T>
     {
         private Container _container;
 
-        public CosmoDatabaseService(
+        public CosmosDatabaseService(
             CosmosClient dbClient,
             string databaseName,
             string containerName)
@@ -56,6 +57,20 @@ namespace API.Repository
             }
 
             return results;
+        }
+
+        public async Task GetItemsAndCallMethodAsync(string queryString, Action<T> callback)
+        {
+            var query = this._container.GetItemQueryIterator<T>(new QueryDefinition(queryString));
+            List<T> results = new List<T>();
+            while (query.HasMoreResults)
+            {
+                var response = await query.ReadNextAsync();
+                foreach(var item in response)
+                {
+                    callback.Invoke(item);
+                }
+            }
         }
 
         public async Task UpdateItemAsync(string id, T item)

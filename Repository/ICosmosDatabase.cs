@@ -1,4 +1,5 @@
 ﻿using API.Models;
+using API.Utility;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,5 +15,7 @@ namespace API.Repository
         Task DeleteItemAsync(string id);
 
         Task GetItemsAndCallMethodAsync(string queryString, Action<T> callback);
+
+        Task<BulkOperationResponse<U>> BulkUpdateAsync<U>(IEnumerable<U> items) where U : CosmoModel, T;
     }
 }

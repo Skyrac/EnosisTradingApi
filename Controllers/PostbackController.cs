@@ -9,9 +9,6 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
-    //ndkcdbu4nl3fTPZ9XbiLU6SG8B1BW0E4zT94m1dY2BVh0ljKf1tBijWYsQwV
-
-    [ApiController]
     [Route("[controller]")]
     public class PostbackController : Controller
     {
@@ -33,7 +30,8 @@ namespace API.Controllers
             _miningContext = miningContext;
         }
 
-        [HttpGet]
+        [Route("my-lead")]
+        [HttpGet()]
         //[ValidateAntiForgeryToken]
         public async Task<IActionResult> Get([Required, FromQuery] PostbackEntity entity)
         {

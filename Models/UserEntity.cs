@@ -1,4 +1,6 @@
-﻿namespace API.Models
+﻿using System;
+
+namespace API.Models
 {
     public class UserEntity : CosmoModel
     {
@@ -15,7 +17,11 @@
         /// </summary>
         public string paypal { get; set; }
         public string login_ip { get; set; }
-        public float bound_points { get; set; }
+        /// <summary>
+        /// Displays the amount of used bound points
+        /// For the "usable bound points" we have to check all user mines collected points - used_bound_points
+        /// </summary>
+        public float used_bound_points { get; set; }
         public float free_points { get; set; }
         /// <summary>
         /// users own referal_id (=[R{user_id}A]
@@ -25,5 +31,12 @@
         /// user_id of the referrer
         /// </summary>
         public string referrer { get; set; }
+
+        public DateTime passive_activation { get; set; }
+        
+        /// <summary>
+        /// Remaining Time for passive farming
+        /// </summary>
+        public double passive_time { get; set; }
     }
 }

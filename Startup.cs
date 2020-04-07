@@ -15,6 +15,7 @@ namespace API
 {
     public class Startup
     {
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -50,10 +51,7 @@ namespace API
             string containerName = typeof(T).Name; ;
             string account = "https://money-moon-db-server.documents.azure.com:443/";
             string key = configurationSection.GetSection("Key").Value;
-            CosmosClientBuilder clientBuilder = new CosmosClientBuilder(account, key);
-            CosmosClient client = clientBuilder
-                                .WithConnectionModeDirect()
-                                .Build();
+            var client = new CosmosClient(account, key, new CosmosClientOptions() { AllowBulkExecution = true });
             var cosmosDbService = new CosmosDatabaseService<T>(client, databaseName, containerName);
             DatabaseResponse database = await client.CreateDatabaseIfNotExistsAsync(databaseName);
             await database.Database.CreateContainerIfNotExistsAsync(containerName, "/id");

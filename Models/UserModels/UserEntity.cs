@@ -9,9 +9,15 @@ namespace API.Models
         /// Verification-Code: First Letter of E-Mail, First 2 Numbers of User_Id, Last Letter of Password 
         /// </summary>
         public string email { get; set; }
+        
+        public Guid user_token { get; set; }
         public string password { get; set; }
+
+        public string activation_key { get; set; }
+
+        public bool is_active { get; set; } = false;
         public string handy { get; set; }
-        public bool two_way_auth { get; set; }
+        public bool two_way_auth { get; set; } = false;
         /// <summary>
         /// Paypal E-Mail address
         /// </summary>

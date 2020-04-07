@@ -20,7 +20,7 @@ namespace API.Services
             _userEntityContext = userEntityContext;
             _mineEntityContext = mineEntityContext;
 
-            Test();
+            //Test();
         }
 
         public async Task<double> GetBoundPoints(string user_id)

@@ -2,6 +2,13 @@
 {
     public class ResponseModel
     {
-        public string status { get; set; }
+        public Status status { get; set; }
+    }
+
+    public enum Status
+    {
+        Success,
+        Failed,
+        Denied
     }
 }

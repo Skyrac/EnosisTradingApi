@@ -42,6 +42,7 @@ namespace API
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserTaskEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<MineEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            services.AddSingleton(InitializeCosmosClientInstanceAsync<LeadEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddScoped<IMine, MineService>();
             services.AddControllers();
         }

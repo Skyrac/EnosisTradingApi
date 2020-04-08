@@ -7,8 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.Controllers
@@ -34,6 +32,25 @@ namespace API.Controllers
             _miningContext = miningContext;
         }
 
+        [Route("/register")]
+        [HttpPost()]
+        public async Task<IActionResult> StartRegistration([FromBody] UserLoginModel registration)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}'", nameof(UserEntity), registration.email));
+                if (user == null)
+                {
+                    var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
+                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString() };
+                    await _userContext.AddItemAsync(user);
+                    Mailer.CreateMessage(registration.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", activationKey));
+                    return Ok(new UserResponseModel() { user = user, status = Status.Success });
+                }
+            }
+            return BadRequest(new ResponseModel() { status = Status.Failed });
+        }
+
         [Route("/activate")]
         [HttpPut]
         public async Task<IActionResult> ActivateAccount([FromBody] ActivationModel activation)
@@ -45,12 +62,13 @@ namespace API.Controllers
                 if (user != null && user.user_token.Equals(activation.user_token) && !string.IsNullOrEmpty(activation.activation_key) && user.activation_key.Equals(activation.activation_key) && !user.is_active)
                 {
                     user.is_active = true;
+                    user.referal_id = string.Format("R{0}A", user.id);
                     await _userContext.UpdateItemAsync(user.id, user);
                     Mailer.CreateMessage(user.email, "Registrierung erfolgreich abgeschlossen!", "Herzlich wilkommen in der Money Moon Rakete!\nBei Fragen scheue dich nicht mich persönlich anzuschreiben oder eines der Hilfevideo anzusehen.\n\n\nViel Spaß beim Geld verdienen :)");
-                    return Ok("Account activated.");
+                    return Ok(new ResponseModel() { status = Status.Success });
                 }
             }
-            return BadRequest("Account activation failed.");
+            return BadRequest(new ResponseModel() { status = Status.Failed });
         }
 
         [Route("/login")]
@@ -59,49 +77,60 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = (await _userContext.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email, login.password))).First();
-                if (user != null)
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email, login.password));
+                if (user != null && user != default(UserEntity))
                 {
                     user.user_token = Guid.NewGuid();
                     await _userContext.UpdateItemAsync(user.id, user);
-                    return Ok(new UserLoginResponseModel() { user_id = user.id, status = "success", user_token = user.user_token });
+                    return Ok(new UserResponseModel() { user = user, status = Status.Success });
                 }
             }
-            return BadRequest("Login failed");
+            return BadRequest(new ResponseModel() { status = Status.Failed });
         }
 
-        [Route("/register")]
-        [HttpPost()]
-        public async Task<IActionResult> StartRegistration([FromBody] UserLoginModel registration)
+        [Route("/forgot/{email}")]
+        [HttpPost]
+        public async Task<IActionResult> PasswordForgotten(string email)
         {
-            if (ModelState.IsValid)
+            var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}'", nameof(UserEntity), email));
+            if (user != null && user != default(UserEntity))
             {
-                var user = (await _userContext.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}'", nameof(UserEntity), registration.email)))?.FirstOrDefault();
-                if (user == null)
+                user.password_forgotten_key = Guid.NewGuid().ToString().Substring(0, 4);
+                await _userContext.UpdateItemAsync(user.id, user);
+                Mailer.CreateMessage(email, "Money Moon - Passwort Vergessen", string.Format("Servus {0},\nIch hoffe es geht dir gut?\n\nDein Code zum zurücksetzen deines Passworts lautet: {1}", user.name, user.password_forgotten_key));
+            }
+            return Ok(new ResponseModel() { status = Status.Success });
+        }
+
+        [Route("/forgot/{email}/{key}")]
+        [HttpPost]
+        public async Task<IActionResult> PasswordForgotten(string email, string key)
+        {
+            if (!string.IsNullOrEmpty(key))
+            {
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password_forgotten_key = '{2}'", nameof(UserEntity), email, key));
+                if (user != null && user != default(UserEntity))
                 {
-                    var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
-                    user = new UserEntity() { user_token = Guid.NewGuid(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString() };
-                    await _userContext.AddItemAsync(user);
-                    Mailer.CreateMessage(registration.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", activationKey));
-                    return Ok(new UserLoginResponseModel() { user_id = user.id, status = "success", user_token = user.user_token });
+                    return Ok(new ResponseModel() { status = Status.Success });
                 }
             }
-            return BadRequest("Registration Failed!");
+            return BadRequest(new ResponseModel() { status = Status.Denied });
         }
 
-
-        [Route("{id}")]
-        [HttpGet()]
-        //[ValidateAntiForgeryToken]
-        public async Task<IActionResult> GetUserAsync(string id)
+        [Route("/forgot/{email}/{key}/{password}")]
+        [HttpPost]
+        public async Task<IActionResult> PasswordForgotten(string email, string key, string password)
         {
-            if(ModelState.IsValid)
+            var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password_forgotten_key = '{2}'", nameof(UserEntity), email, key));
+            if (user != null && user != default(UserEntity))
             {
-                var user = await _userContext.GetItemAsync(id);
-                return Ok(user);
+                user.password = password;
+                user.password_forgotten_key = "";
+                user.user_token = Guid.NewGuid();
+                await _userContext.UpdateItemAsync(user.id, user);
+                return Ok(new UserResponseModel() { user= user, status = Status.Success });
             }
-
-            return BadRequest();
+            return BadRequest(new ResponseModel() { status = Status.Denied });
         }
     }
 }

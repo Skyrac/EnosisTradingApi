@@ -10,6 +10,8 @@ namespace API.Repository
     {
         Task<IEnumerable<T>> GetItemsAsync(string query);
         Task<T> GetItemAsync(string id);
+
+        Task<T> GetItemByQueryAsync(string query);
         Task AddItemAsync<U>(U item) where U : CosmoModel;
         Task UpdateItemAsync(string id, T item);
         Task DeleteItemAsync(string id);

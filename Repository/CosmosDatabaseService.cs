@@ -42,6 +42,11 @@ namespace API.Repository
 
         }
 
+        public async Task<T> GetItemByQueryAsync(string queryString)
+        {
+            return (await GetItemsAsync(queryString)).FirstOrDefault();
+        }
+
         public async Task<IEnumerable<T>> GetItemsAsync(string queryString)
         {
             var query = _container.GetItemQueryIterator<T>(new QueryDefinition(queryString));

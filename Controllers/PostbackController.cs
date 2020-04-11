@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
-    [Route("[controller]")]
+    [Route("postback")]
     public class PostbackController : Controller
     {
         private ICosmosDatabase<UserTaskEntity> _userTaskContext;

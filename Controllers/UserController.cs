@@ -32,7 +32,7 @@ namespace API.Controllers
             _miningContext = miningContext;
         }
 
-        [Route("/register")]
+        [Route("register")]
         [HttpPost()]
         public async Task<IActionResult> StartRegistration([FromBody] UserLoginModel registration)
         {
@@ -43,6 +43,17 @@ namespace API.Controllers
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
                     user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString() };
+
+                    if (!string.IsNullOrEmpty(registration.referal))
+                    {
+                        var referal = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.referal_id = '{1}'", nameof(UserEntity), registration.referal));
+                        if (referal == null)
+                        {
+                            return BadRequest(new ResponseModel() { status = Status.Failed });
+                        }
+
+                        user.referrer = referal.id;
+                    }
                     await _userContext.AddItemAsync(user);
                     Mailer.CreateMessage(registration.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", activationKey));
                     return Ok(new UserResponseModel() { user = user, status = Status.Success });
@@ -51,7 +62,7 @@ namespace API.Controllers
             return BadRequest(new ResponseModel() { status = Status.Failed });
         }
 
-        [Route("/activate")]
+        [Route("activate")]
         [HttpPut]
         public async Task<IActionResult> ActivateAccount([FromBody] ActivationModel activation)
         {
@@ -71,7 +82,7 @@ namespace API.Controllers
             return BadRequest(new ResponseModel() { status = Status.Failed });
         }
 
-        [Route("/login")]
+        [Route("login")]
         [HttpPut]
         public async Task<IActionResult> Login([FromBody] UserLoginModel login)
         {
@@ -88,7 +99,7 @@ namespace API.Controllers
             return BadRequest(new ResponseModel() { status = Status.Failed });
         }
 
-        [Route("/forgot/{email}")]
+        [Route("forgot/{email}")]
         [HttpPost]
         public async Task<IActionResult> PasswordForgotten(string email)
         {
@@ -102,7 +113,7 @@ namespace API.Controllers
             return Ok(new ResponseModel() { status = Status.Success });
         }
 
-        [Route("/forgot/{email}/{key}")]
+        [Route("forgot/{email}/{key}")]
         [HttpPost]
         public async Task<IActionResult> PasswordForgotten(string email, string key)
         {
@@ -117,7 +128,7 @@ namespace API.Controllers
             return BadRequest(new ResponseModel() { status = Status.Denied });
         }
 
-        [Route("/forgot/{email}/{key}/{password}")]
+        [Route("forgot/{email}/{key}/{password}")]
         [HttpPost]
         public async Task<IActionResult> PasswordForgotten(string email, string key, string password)
         {

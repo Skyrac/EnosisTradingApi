@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace API.Controllers
 {
-    [Route("leads")]
+    [Route("affiliate")]
     public class AffiliateLeadController : Controller
     {
 

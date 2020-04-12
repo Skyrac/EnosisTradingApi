@@ -38,7 +38,7 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}'", nameof(UserEntity), registration.email));
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' OR {0}.name = '{2}'", nameof(UserEntity), registration.email, registration.name));
                 if (user == null)
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
@@ -49,7 +49,7 @@ namespace API.Controllers
                         var referal = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.referal_id = '{1}'", nameof(UserEntity), registration.referal));
                         if (referal == null)
                         {
-                            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
+                            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "referal_not_found" });
                         }
 
                         user.referrer = referal.id;
@@ -59,7 +59,7 @@ namespace API.Controllers
                     return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
                 }
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "already_exist" });
         }
 
         [Route("activate")]
@@ -79,7 +79,7 @@ namespace API.Controllers
                     return Ok(new ResponseModel() { status = InfoStatus.Info });
                 }
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
         }
 
         [Route("login")]
@@ -96,7 +96,7 @@ namespace API.Controllers
                     return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
                 }
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
         }
 
         [Route("forgot/{email}")]
@@ -110,7 +110,7 @@ namespace API.Controllers
                 await _userContext.UpdateItemAsync(user.id, user);
                 Mailer.CreateMessage(email, "Money Moon - Passwort Vergessen", string.Format("Servus {0},\nIch hoffe es geht dir gut?\n\nDein Code zum zurücksetzen deines Passworts lautet: {1}", user.name, user.password_forgotten_key));
             }
-            return Ok(new ResponseModel() { status = InfoStatus.Info });
+            return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
         }
 
         [Route("forgot/{email}/{key}")]
@@ -125,7 +125,7 @@ namespace API.Controllers
                     return Ok(new ResponseModel() { status = InfoStatus.Info });
                 }
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Error });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "wrong_entries" });
         }
 
         [Route("forgot/{email}/{key}/{password}")]
@@ -141,7 +141,7 @@ namespace API.Controllers
                 await _userContext.UpdateItemAsync(user.id, user);
                 return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Error });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "wrong_entries" });
         }
     }
 }

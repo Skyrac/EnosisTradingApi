@@ -49,17 +49,17 @@ namespace API.Controllers
                         var referal = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.referal_id = '{1}'", nameof(UserEntity), registration.referal));
                         if (referal == null)
                         {
-                            return BadRequest(new ResponseModel() { status = Status.Failed });
+                            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
                         }
 
                         user.referrer = referal.id;
                     }
                     await _userContext.AddItemAsync(user);
                     Mailer.CreateMessage(registration.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", activationKey));
-                    return Ok(new UserResponseModel() { user = user, status = Status.Success });
+                    return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
                 }
             }
-            return BadRequest(new ResponseModel() { status = Status.Failed });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
 
         [Route("activate")]
@@ -76,10 +76,10 @@ namespace API.Controllers
                     user.referal_id = string.Format("R{0}A", user.id);
                     await _userContext.UpdateItemAsync(user.id, user);
                     Mailer.CreateMessage(user.email, "Registrierung erfolgreich abgeschlossen!", "Herzlich wilkommen in der Money Moon Rakete!\nBei Fragen scheue dich nicht mich persönlich anzuschreiben oder eines der Hilfevideo anzusehen.\n\n\nViel Spaß beim Geld verdienen :)");
-                    return Ok(new ResponseModel() { status = Status.Success });
+                    return Ok(new ResponseModel() { status = InfoStatus.Info });
                 }
             }
-            return BadRequest(new ResponseModel() { status = Status.Failed });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
 
         [Route("login")]
@@ -93,10 +93,10 @@ namespace API.Controllers
                 {
                     user.user_token = Guid.NewGuid();
                     await _userContext.UpdateItemAsync(user.id, user);
-                    return Ok(new UserResponseModel() { user = user, status = Status.Success });
+                    return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
                 }
             }
-            return BadRequest(new ResponseModel() { status = Status.Failed });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
 
         [Route("forgot/{email}")]
@@ -110,7 +110,7 @@ namespace API.Controllers
                 await _userContext.UpdateItemAsync(user.id, user);
                 Mailer.CreateMessage(email, "Money Moon - Passwort Vergessen", string.Format("Servus {0},\nIch hoffe es geht dir gut?\n\nDein Code zum zurücksetzen deines Passworts lautet: {1}", user.name, user.password_forgotten_key));
             }
-            return Ok(new ResponseModel() { status = Status.Success });
+            return Ok(new ResponseModel() { status = InfoStatus.Info });
         }
 
         [Route("forgot/{email}/{key}")]
@@ -122,10 +122,10 @@ namespace API.Controllers
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password_forgotten_key = '{2}'", nameof(UserEntity), email, key));
                 if (user != null && user != default(UserEntity))
                 {
-                    return Ok(new ResponseModel() { status = Status.Success });
+                    return Ok(new ResponseModel() { status = InfoStatus.Info });
                 }
             }
-            return BadRequest(new ResponseModel() { status = Status.Denied });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error });
         }
 
         [Route("forgot/{email}/{key}/{password}")]
@@ -139,9 +139,9 @@ namespace API.Controllers
                 user.password_forgotten_key = "";
                 user.user_token = Guid.NewGuid();
                 await _userContext.UpdateItemAsync(user.id, user);
-                return Ok(new UserResponseModel() { user= user, status = Status.Success });
+                return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
             }
-            return BadRequest(new ResponseModel() { status = Status.Denied });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error });
         }
     }
 }

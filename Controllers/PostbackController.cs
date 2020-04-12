@@ -39,10 +39,10 @@ namespace API.Controllers
             {
                 await _userTaskContext.AddItemAsync(new UserTaskEntity(null, entity.click_id, entity.aff_id, entity.p_id, entity.status, entity.payout));
                 var val = await _userTaskContext.GetItemAsync("1");
-                return Ok(new ResponseModel() { status = Status.Success });
+                return Ok(new ResponseModel() { status = InfoStatus.Info });
             }
 
-            return BadRequest(new ResponseModel() { status = Status.Failed });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
     }
 }

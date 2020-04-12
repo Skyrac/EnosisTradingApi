@@ -23,9 +23,9 @@ namespace API.Controllers
             if (ModelState.IsValid && (await _leadDatabase.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.language = '{1}' AND {0}.name = '{2}'", nameof(LeadEntity), lead.language, lead.name))) == null)
             {
                 await _leadDatabase.AddItemAsync(lead);
-                return Ok(new ResponseModel() { status = Status.Success });
+                return Ok(new ResponseModel() { status = InfoStatus.Info });
             }
-            return BadRequest(new ResponseModel() { status = Status.Failed });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
 
         [HttpGet]
@@ -42,7 +42,7 @@ namespace API.Controllers
             var lead = await _leadDatabase.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.language = '{1}' AND {0}.name = '{2}'", nameof(LeadEntity), language, name));
             if (lead == null)
             {
-                return BadRequest(new ResponseModel() { status = Status.Failed });
+                return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
             }
             return Ok(lead);
         }
@@ -54,7 +54,7 @@ namespace API.Controllers
             var lead = await _leadDatabase.GetItemAsync(id);
             if(lead == null)
             {
-                return BadRequest(new ResponseModel() { status = Status.Failed });
+                return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
             }
             return Ok(lead);
         }

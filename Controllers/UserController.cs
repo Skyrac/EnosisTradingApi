@@ -65,7 +65,7 @@ namespace API.Controllers
 
         [Route("resend")]
         [HttpPost]
-        public async Task<IActionResult> ResendEmail([FromBody] ActivationModel activation)
+        public async Task<IActionResult> ResendEmail([FromBody] UserReferenceModel activation)
         {
             if (ModelState.IsValid)
             {
@@ -82,7 +82,7 @@ namespace API.Controllers
 
         [Route("activate")]
         [HttpPut]
-        public async Task<IActionResult> ActivateAccount([FromBody] ActivationModel activation)
+        public async Task<IActionResult> ActivateAccount([FromBody] UserReferenceModel activation)
         {
             if (ModelState.IsValid)
             {
@@ -93,6 +93,7 @@ namespace API.Controllers
                     user.is_active = true;
                     user.referal_id = string.Format("R{0}A", user.id);
                     await _userContext.UpdateItemAsync(user.id, user);
+                    await _miningContext.AddItemAsync(new MineEntity() { last_check = DateTime.Now, power = 0.0f, start_date = DateTime.Now, mined_points = 0.0f, remaining_time = -717, user = user.id });
                     Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_successfull_activation"), Language.Translate(user.language, "content_successfull_activation"));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "successful_activated" });
                 }
@@ -183,6 +184,26 @@ namespace API.Controllers
                 }
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "wrong_entries" });
+        }
+
+        [Route("mining-stats")]
+        [HttpPut]
+        public async Task<IActionResult> GetMiningStats([FromBody] UserReferenceModel userRef)
+        {
+            if(ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemAsync(userRef.user_id);
+                if(user != null && user.user_token == userRef.user_token)
+                {
+                    var power = await _miner.GetUserPowerAsync(user);
+                    var model = UserModel.FromEntity(user);
+                    model.power = power;
+                    await _userContext.UpdateItemAsync(user.id, user);
+                    return Ok(model);
+                }
+            }
+
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "invalid_user_ref" });
         }
 
         [Route("forgot/{email}/{key}/{password}")]

@@ -25,7 +25,9 @@ namespace API.Models.UserModels
         public double passive_time { get; set; }
         public SystemLanguage language { get; set; }
 
-        public static UserModel FromEntity(UserEntity user, InfoStatus status)
+        public float power { get; set; }
+
+        public static UserModel FromEntity(UserEntity user, InfoStatus status = InfoStatus.Info)
         {
             return new UserModel()
             {

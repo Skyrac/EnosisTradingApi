@@ -23,12 +23,9 @@ namespace API.Services
             //Test();
         }
 
-        public async Task<double> GetBoundPoints(string user_id)
+        public async Task<double> GetBoundPoints(UserEntity user)
         {
-            UserEntity user;
-            if((user = miners.Keys.Where(key => key.id == user_id).First()) == null) {
-
-                user = await _userEntityContext.GetItemAsync(user_id);
+            if((user = miners.Keys.Where(key => key.id == user.id).First()) == null) {
                 AddMiner(user);
             }
             if(user == null)
@@ -45,7 +42,7 @@ namespace API.Services
                 mines = miners[user];
             } else
             {
-                mines = await _mineEntityContext.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.remaining_time > 0 AND {0}.user = '{1}'", nameof(MineEntity), user.id));
+                mines = await GetUserMinesAsync(user);
                 miners[user].AddRange(mines);
             }
             var collectedPoints = 0.0f;
@@ -58,15 +55,42 @@ namespace API.Services
             return user.used_bound_points - collectedPoints;
         }
 
+        public void UpdateUserPassiveTime(UserEntity user)
+        {
+            var now = DateTime.Now;
+            user.passive_time = now.Subtract(user.last_check).Seconds;
+            user.last_check = now;
+        }
+
+        public async Task<IEnumerable<MineEntity>> GetUserMinesAsync(UserEntity user)
+        {
+            var mines = await _mineEntityContext.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE ({0}.remaining_time > 0 OR {0}.remaining_time = -717) AND {0}.user = '{1}'", nameof(MineEntity), user.id));
+            return mines;
+        }
+
+        public async Task<float> GetUserPowerAsync(UserEntity user)
+        {
+            var mines = await GetUserMinesAsync(user);
+            UpdateUserPassiveTime(user);
+            var power = 0.0f;
+            foreach(var mine in mines)
+            {
+                power += mine.power;
+            }
+            return power;
+        }
+
+
+
         public void UpdateEntities(UserEntity user, IEnumerable<MineEntity> mines) {
             _userEntityContext.UpdateItemAsync(user.id, user);
             _mineEntityContext.BulkUpdateAsync(mines);
         }
 
-        public float CheckMine(DateTime last, DateTime start, MineEntity mine)
+        public float CheckMine(DateTime lastMineCheck, DateTime userPassiveActivation, MineEntity mine)
         {
             var current = DateTime.Now;
-            var timeBetween = (last.CompareTo(start) < 0 ? current.Subtract(start) : current.Subtract(last)).Seconds;
+            var timeBetween = (lastMineCheck.CompareTo(userPassiveActivation) < 0 ? current.Subtract(userPassiveActivation) : current.Subtract(lastMineCheck)).Seconds;
             mine.remaining_time -= timeBetween;
             mine.last_check = current;
             mine.mined_points += mine.power / 60 * timeBetween;

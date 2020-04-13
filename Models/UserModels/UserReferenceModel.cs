@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace API.Models
 {
-    public class ActivationModel
+    public class UserReferenceModel
     {
         [Required]
         public string user_id { get; set; }

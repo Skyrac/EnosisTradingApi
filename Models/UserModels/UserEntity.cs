@@ -49,6 +49,8 @@ namespace API.Models
         public string referrer { get; set; }
 
         public DateTime passive_activation { get; set; }
+
+        public DateTime last_check { get; set; }
         
         /// <summary>
         /// Remaining Time for passive farming

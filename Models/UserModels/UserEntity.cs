@@ -15,7 +15,7 @@ namespace API.Models
 
         public string name { get; set; }
         
-        public Guid user_token { get; set; }
+        public string user_token { get; set; }
         public string password { get; set; }
 
         public string password_forgotten_key { get; set; }

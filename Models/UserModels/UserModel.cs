@@ -2,13 +2,14 @@
 
 namespace API.Models.UserModels
 {
-    public class UserResponseModel : ResponseModel
+    public class UserModel : ResponseModel
     {
+        public string id { get; set; }
         public string email { get; set; }
 
         public string name { get; set; }
 
-        public Guid user_token { get; set; }
+        public string user_token { get; set; }
         public bool is_active { get; set; } = false;
         public string handy { get; set; }
         public bool two_way_auth { get; set; } = false;
@@ -22,10 +23,11 @@ namespace API.Models.UserModels
         public DateTime passive_activation { get; set; }
         public double passive_time { get; set; }
 
-        public static UserResponseModel FromEntity(UserEntity user, InfoStatus status)
+        public static UserModel FromEntity(UserEntity user, InfoStatus status)
         {
-            return new UserResponseModel()
+            return new UserModel()
             {
+                id = user.id,
                 status = status,
                 email = user.email,
                 name = user.name,

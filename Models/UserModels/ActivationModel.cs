@@ -8,8 +8,8 @@ namespace API.Models
         [Required]
         public string user_id { get; set; }
         [Required]
-        public Guid user_token { get; set; }
-        [Required, StringLength(4)]
+        public string user_token { get; set; }
+        [MaxLength(4)]
         public string activation_key { get; set; }
     }
 }

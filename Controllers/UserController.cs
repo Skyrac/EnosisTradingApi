@@ -42,7 +42,7 @@ namespace API.Controllers
                 if (user == null)
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
-                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString() };
+                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid().ToString(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString() };
 
                     if (!string.IsNullOrEmpty(registration.referal))
                     {
@@ -56,10 +56,28 @@ namespace API.Controllers
                     }
                     await _userContext.AddItemAsync(user);
                     Mailer.CreateMessage(registration.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", activationKey));
-                    return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
+                    return Ok(UserModel.FromEntity(user, InfoStatus.Info));
                 }
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "already_exist" });
+        }
+
+        [Route("resend")]
+        [HttpPost]
+        public async Task<IActionResult> ResendEmail([FromBody] ActivationModel activation)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemAsync(activation.user_id);
+
+                if (user != null && user.user_token.Equals(activation.user_token) && !user.is_active)
+                {
+
+                    Mailer.CreateMessage(user.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", user.activation_key));
+                    return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
+                }
+            }
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "unknown" });
         }
 
         [Route("activate")]
@@ -76,10 +94,30 @@ namespace API.Controllers
                     user.referal_id = string.Format("R{0}A", user.id);
                     await _userContext.UpdateItemAsync(user.id, user);
                     Mailer.CreateMessage(user.email, "Registrierung erfolgreich abgeschlossen!", "Herzlich wilkommen in der Money Moon Rakete!\nBei Fragen scheue dich nicht mich persönlich anzuschreiben oder eines der Hilfevideo anzusehen.\n\n\nViel Spaß beim Geld verdienen :)");
-                    return Ok(new ResponseModel() { status = InfoStatus.Info });
+                    return Ok(new ResponseModel() { status = InfoStatus.Info, text = "successful_activated" });
                 }
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "invalid_activation_key" });
+        }
+
+        
+        [Route("update")]
+        [HttpPut]
+        public async Task<IActionResult> UpdateUserInformation([FromBody] UserModel updateInfos)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemAsync(updateInfos.id);
+
+                if (user != null && user.user_token.Equals(updateInfos.user_token))
+                {
+                    user.email = updateInfos.email;
+                    //await _userContext.UpdateItemAsync(user.id, user);
+                    //Mailer.CreateMessage(user.email, "Registrierung erfolgreich abgeschlossen!", "Herzlich wilkommen in der Money Moon Rakete!\nBei Fragen scheue dich nicht mich persönlich anzuschreiben oder eines der Hilfevideo anzusehen.\n\n\nViel Spaß beim Geld verdienen :)");
+                    return Ok(new ResponseModel() { status = InfoStatus.Info, text = "successful_activated" });
+                }
+            }
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "invalid_activation_key" });
         }
 
         [Route("login")]
@@ -91,9 +129,9 @@ namespace API.Controllers
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email, login.password));
                 if (user != null && user != default(UserEntity))
                 {
-                    user.user_token = Guid.NewGuid();
+                    user.user_token = Guid.NewGuid().ToString();
                     await _userContext.UpdateItemAsync(user.id, user);
-                    return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
+                    return Ok(UserModel.FromEntity(user, InfoStatus.Info));
                 }
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
@@ -137,9 +175,9 @@ namespace API.Controllers
             {
                 user.password = password;
                 user.password_forgotten_key = "";
-                user.user_token = Guid.NewGuid();
+                user.user_token = Guid.NewGuid().ToString();
                 await _userContext.UpdateItemAsync(user.id, user);
-                return Ok(UserResponseModel.FromEntity(user, InfoStatus.Info));
+                return Ok(UserModel.FromEntity(user, InfoStatus.Info));
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "wrong_entries" });
         }

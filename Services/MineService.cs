@@ -58,7 +58,7 @@ namespace API.Services
         public void UpdateUserPassiveTime(UserEntity user)
         {
             var now = DateTime.Now;
-            user.passive_time = now.Subtract(user.last_check).Seconds;
+            user.passive_time = Math.Max(user.passive_time - now.Subtract(user.last_check).Seconds, 0);
             user.last_check = now;
         }
 
@@ -70,12 +70,36 @@ namespace API.Services
 
         public async Task<float> GetUserPowerAsync(UserEntity user)
         {
-            var mines = await GetUserMinesAsync(user);
+            if (miners.Count == 0 || (user = miners.Keys.Where(key => key.id == user.id).First()) == null)
+            {
+                AddMiner(user);
+            }
+            IEnumerable<MineEntity> mines;
+            if (miners[user].Count > 0)
+            {
+                mines = miners[user];
+            }
+            else
+            {
+                mines = await GetUserMinesAsync(user);
+                miners[user].AddRange(mines);
+            }
             UpdateUserPassiveTime(user);
             var power = 0.0f;
             foreach(var mine in mines)
             {
-                power += mine.power;
+                if (user.passive_time > 0)
+                {
+                    CheckMine(mine.last_check, user.passive_activation, mine);
+                }
+                if (mine.remaining_time > 0 || mine.remaining_time == -717)
+                {
+                    power += mine.power;
+                }
+            }
+            if (user.passive_time > 0)
+            {
+                new Task(() => { UpdateEntities(user, mines); }).Start();
             }
             return power;
         }
@@ -91,7 +115,7 @@ namespace API.Services
         {
             var current = DateTime.Now;
             var timeBetween = (lastMineCheck.CompareTo(userPassiveActivation) < 0 ? current.Subtract(userPassiveActivation) : current.Subtract(lastMineCheck)).Seconds;
-            mine.remaining_time -= timeBetween;
+            mine.remaining_time -= mine.remaining_time == -717 ? 0 : timeBetween;
             mine.last_check = current;
             mine.mined_points += mine.power / 60 * timeBetween;
             return mine.mined_points;

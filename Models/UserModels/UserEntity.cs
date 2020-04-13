@@ -55,7 +55,7 @@ namespace API.Models
         /// <summary>
         /// Remaining Time for passive farming
         /// </summary>
-        public double passive_time { get; set; }
+        public float passive_time { get; set; }
 
         public SystemLanguage language { get; set; }
     }

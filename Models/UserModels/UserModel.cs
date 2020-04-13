@@ -22,7 +22,7 @@ namespace API.Models.UserModels
         public float free_points { get; set; }
         public string referal_id { get; set; }
         public DateTime passive_activation { get; set; }
-        public double passive_time { get; set; }
+        public float passive_time { get; set; }
         public SystemLanguage language { get; set; }
 
         public float power { get; set; }

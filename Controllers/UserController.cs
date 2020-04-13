@@ -38,6 +38,7 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
+                registration.email = registration.email.ToLower();
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' OR {0}.name = '{2}'", nameof(UserEntity), registration.email, registration.name));
                 if (user == null)
                 {
@@ -55,7 +56,7 @@ namespace API.Controllers
                         user.referrer = referal.id;
                     }
                     await _userContext.AddItemAsync(user);
-                    Mailer.CreateMessage(registration.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", activationKey));
+                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
                     return Ok(UserModel.FromEntity(user, InfoStatus.Info));
                 }
             }
@@ -72,8 +73,7 @@ namespace API.Controllers
 
                 if (user != null && user.user_token.Equals(activation.user_token) && !user.is_active)
                 {
-
-                    Mailer.CreateMessage(user.email, "Registrierung für Money Moon abschließen", string.Format("Dein Code für das aktivieren deines Accounts: {0}", user.activation_key));
+                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
                 }
             }
@@ -93,7 +93,7 @@ namespace API.Controllers
                     user.is_active = true;
                     user.referal_id = string.Format("R{0}A", user.id);
                     await _userContext.UpdateItemAsync(user.id, user);
-                    Mailer.CreateMessage(user.email, "Registrierung erfolgreich abgeschlossen!", "Herzlich wilkommen in der Money Moon Rakete!\nBei Fragen scheue dich nicht mich persönlich anzuschreiben oder eines der Hilfevideo anzusehen.\n\n\nViel Spaß beim Geld verdienen :)");
+                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_successfull_activation"), Language.Translate(user.language, "content_successfull_activation"));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "successful_activated" });
                 }
             }
@@ -108,16 +108,33 @@ namespace API.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _userContext.GetItemAsync(updateInfos.id);
-
+                if (!string.IsNullOrEmpty(updateInfos.email))
+                {
+                    updateInfos.email = updateInfos.email.ToLower();
+                    if (!updateInfos.email.Equals(user.email, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var check = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}'", nameof(UserEntity), updateInfos.email));
+                        if (check != null)
+                        {
+                            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "email_exists" });
+                        }
+                    }
+                }
                 if (user != null && user.user_token.Equals(updateInfos.user_token))
                 {
-                    user.email = updateInfos.email;
-                    //await _userContext.UpdateItemAsync(user.id, user);
-                    //Mailer.CreateMessage(user.email, "Registrierung erfolgreich abgeschlossen!", "Herzlich wilkommen in der Money Moon Rakete!\nBei Fragen scheue dich nicht mich persönlich anzuschreiben oder eines der Hilfevideo anzusehen.\n\n\nViel Spaß beim Geld verdienen :)");
-                    return Ok(new ResponseModel() { status = InfoStatus.Info, text = "successful_activated" });
+                    UserModel.Update(ref user, updateInfos);
+                    await _userContext.UpdateItemAsync(user.id, user);
+                    if (!user.is_active)
+                    {
+                        Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
+                    } else
+                    {
+                        Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_account_updated"), Language.Translate(user.language, "content_account_updated"));
+                    }
+                    return Ok(new ResponseModel() { status = InfoStatus.Info, text = "account_updated" });
                 }
             }
-            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "invalid_activation_key" });
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
 
         [Route("login")]
@@ -126,7 +143,7 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email, login.password));
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email.ToLower(), login.password));
                 if (user != null && user != default(UserEntity))
                 {
                     user.user_token = Guid.NewGuid().ToString();
@@ -141,12 +158,13 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> PasswordForgotten(string email)
         {
+            email = email.ToLower();
             var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}'", nameof(UserEntity), email));
             if (user != null && user != default(UserEntity))
             {
                 user.password_forgotten_key = Guid.NewGuid().ToString().Substring(0, 4);
                 await _userContext.UpdateItemAsync(user.id, user);
-                Mailer.CreateMessage(email, "Money Moon - Passwort Vergessen", string.Format("Servus {0},\nIch hoffe es geht dir gut?\n\nDein Code zum zurücksetzen deines Passworts lautet: {1}", user.name, user.password_forgotten_key));
+                Mailer.CreateMessage(email, Language.Translate(user.language, "title_forgot_password"), string.Format(Language.Translate(user.language, "content_forgot_password"), user.name, user.password_forgotten_key));
             }
             return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
         }
@@ -155,6 +173,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> PasswordForgotten(string email, string key)
         {
+            email = email.ToLower();
             if (!string.IsNullOrEmpty(key))
             {
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password_forgotten_key = '{2}'", nameof(UserEntity), email, key));
@@ -170,6 +189,7 @@ namespace API.Controllers
         [HttpPost]
         public async Task<IActionResult> PasswordForgotten(string email, string key, string password)
         {
+            email = email.ToLower();
             var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password_forgotten_key = '{2}'", nameof(UserEntity), email, key));
             if (user != null && user != default(UserEntity))
             {

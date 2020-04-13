@@ -1,4 +1,5 @@
-﻿using System;
+﻿using API.Utility;
+using System;
 
 namespace API.Models.UserModels
 {
@@ -22,6 +23,7 @@ namespace API.Models.UserModels
         public string referal_id { get; set; }
         public DateTime passive_activation { get; set; }
         public double passive_time { get; set; }
+        public SystemLanguage language { get; set; }
 
         public static UserModel FromEntity(UserEntity user, InfoStatus status)
         {
@@ -40,8 +42,26 @@ namespace API.Models.UserModels
                 free_points = user.free_points,
                 referal_id = user.referal_id,
                 passive_activation = user.passive_activation,
-                passive_time = user.passive_time
+                passive_time = user.passive_time,
+                language = user.language
             };
         }
+        public static void Update(ref UserEntity user, UserModel model)
+        {
+            if (!string.IsNullOrEmpty(model.email))
+            {
+                user.email = model.email;
+            }
+            if (!string.IsNullOrEmpty(model.handy))
+            {
+                user.handy = model.handy;
+            }
+            if (model.two_way_auth)
+            {
+                user.two_way_auth = model.two_way_auth;
+            }
+        }
     }
+
+
 }

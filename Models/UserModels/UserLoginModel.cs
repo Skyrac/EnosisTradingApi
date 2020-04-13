@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using API.Utility;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Models
 {
@@ -12,5 +13,6 @@ namespace API.Models
         public string password { get; set; }
         public string name { get; set; }
         public string referal { get; set; }
+        public SystemLanguage language { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using API.Utility;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace API.Models
@@ -53,5 +54,7 @@ namespace API.Models
         /// Remaining Time for passive farming
         /// </summary>
         public double passive_time { get; set; }
+
+        public SystemLanguage language { get; set; }
     }
 }

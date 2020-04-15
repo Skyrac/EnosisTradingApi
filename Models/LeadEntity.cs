@@ -5,8 +5,6 @@ namespace API.Models
     public class LeadEntity : CosmoModel
     {
         [Required]
-        public string language { get; set; }
-        [Required]
         public string name { get; set; }
         [Required]
         public string description { get; set; }
@@ -16,18 +14,18 @@ namespace API.Models
         /// Immer von Min ausgehend
         /// </summary>
         [Required]
+        ///In Punkten
         public float commission { get; set; }
+        //Two Letter ISO Region Code
         [Required]
-        public string devices { get; set; }
-        [Required]
-        public string countries { get; set; }
+        public string country_code { get; set; }
         [Required]
         [Url]
         public string url { get; set; }
         [Required]
-        public string categories { get; set; }
+        public Category category { get; set; }
     }
-
+    
     public enum LeadType
     {
         CPL,
@@ -35,5 +33,11 @@ namespace API.Models
         CPA,
         PPI,
         COD
+    }
+
+    public enum Category
+    {
+        Default,
+        Recommended
     }
 }

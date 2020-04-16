@@ -69,6 +69,16 @@ namespace API.Controllers
             return Ok(leads.ToList());
         }
 
+        [HttpDelete]
+        public async Task<IActionResult> DeleteLeads([Required, FromBody] IEnumerable<string> leads)
+        {
+            foreach(var lead in leads)
+            {
+                await _leadDatabase.DeleteItemAsync(lead);
+            }
+            return Ok(leads.ToList());
+        }
+
         [HttpGet]
         [Route("{name}/{country}")]
         public async Task<IActionResult> GetLeadAsync(string name, string country)

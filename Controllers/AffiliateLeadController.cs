@@ -26,6 +26,7 @@ namespace API.Controllers
             {
                 foreach (var lead in leads)
                 {
+                    lead.country_code = lead.country_code.ToLower();
                     // ({0}.country_code = '{1}' AND {0}.name = '{2}')
                     var alreadyExist = await _leadDatabase.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}' AND {0}.name = '{2}' AND {0}.id != '{3}'", nameof(LeadEntity), lead.country_code, lead.name, lead.id));
                     if(alreadyExist != null)
@@ -52,6 +53,7 @@ namespace API.Controllers
             {
                 foreach (var lead in leads)
                 {
+                    lead.country_code = lead.country_code.ToLower();
                     if ((await _leadDatabase.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}' AND {0}.name = '{2}'", nameof(LeadEntity), lead.country_code, lead.name))) == null)
                     {
                         await _leadDatabase.AddItemAsync(lead);
@@ -73,6 +75,7 @@ namespace API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLeadsByCountryAsync([FromRoute(Name = "country-code")] string country)
         {
+            country = country.ToLower();
             var leads = await _leadDatabase.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}'", nameof(LeadEntity), country));
             return Ok(leads.ToList());
         }
@@ -81,6 +84,7 @@ namespace API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLeadsByCountryAsync([FromRoute(Name = "country-code")] string country, Category category)
         {
+            country = country.ToLower();
             var leads = await _leadDatabase.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}' AND {0}.category = {2}", nameof(LeadEntity), country, (int) category));
             return Ok(leads.ToList());
         }
@@ -99,6 +103,7 @@ namespace API.Controllers
         [Route("{name}/country/{country}")]
         public async Task<IActionResult> GetLeadAsync(string name, string country)
         {
+            country = country.ToLower();
             var lead = await _leadDatabase.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}' AND {0}.name = '{2}'", nameof(LeadEntity), country, name));
             if (lead == null)
             {

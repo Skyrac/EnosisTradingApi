@@ -19,7 +19,7 @@ namespace API.Controllers
         private ICosmosDatabase<MineEntity> _miningContext;
         private IMine _miner;
 
-        public static List<PostbackEntity> posts = new List<PostbackEntity>();
+        public static List<MyLeadPostback> posts = new List<MyLeadPostback>();
 
         private readonly ILogger<PostbackController> _logger;
 

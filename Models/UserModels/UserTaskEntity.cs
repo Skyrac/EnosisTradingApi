@@ -16,11 +16,20 @@
         public string affiliate { get; set; }
         public string program { get; set; }
         public string status { get; set; }
-        public float payout { get; set; }
+        public string payout { get; set; }
 
-        public UserTaskEntity(string user_id, string click_id, string aff_id, string prog_id, string status, float payout)
+        
+        public UserTaskEntity() { }
+
+        public UserTaskEntity(string click_id, string payout, string prog_id)
         {
-            this.user = user_id;
+            this.click = click_id;
+            this.program = prog_id;
+            this.payout = payout;
+        }
+
+        public UserTaskEntity(string click_id, string aff_id, string prog_id, string status, string payout)
+        {
             this.click = click_id;
             this.affiliate = aff_id;
             this.program = prog_id;

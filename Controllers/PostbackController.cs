@@ -17,7 +17,7 @@ namespace API.Controllers
         private ICosmosDatabase<MineEntity> _miningContext;
         private IMine _miner;
 
-        public static List<PostbackEntity> posts = new List<PostbackEntity>();
+        public static List<MyLeadPostback> posts = new List<MyLeadPostback>();
 
         private readonly ILogger<PostbackController> _logger;
 
@@ -32,13 +32,27 @@ namespace API.Controllers
 
         [Route("my-lead")]
         [HttpGet()]
-        //[ValidateAntiForgeryToken]
-        public async Task<IActionResult> Get([Required, FromQuery] PostbackEntity entity)
+        public async Task<IActionResult> PostbackMyLead([Required, FromQuery] MyLeadPostback entity)
         {
             if(ModelState.IsValid)
             {
-                await _userTaskContext.AddItemAsync(new UserTaskEntity(null, entity.click_id, entity.aff_id, entity.p_id, entity.status, entity.payout));
+                await _userTaskContext.AddItemAsync(new UserTaskEntity(entity.click_id, entity.aff_id, entity.p_id, entity.status, entity.payout));
                 var val = await _userTaskContext.GetItemAsync("1");
+                return Ok(new ResponseModel() { status = InfoStatus.Info });
+            }
+
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
+        }
+
+        [Route("adklick")]
+        [HttpGet()]
+        [HttpPost()]
+        [HttpPut()]
+        public async Task<IActionResult> PostbackOrangePie([Required, FromQuery] AdklickPostback entity)
+        {
+            if (ModelState.IsValid)
+            {
+                await _userTaskContext.AddItemAsync(new UserTaskEntity(entity.sub_id, entity.payment, entity.program));
                 return Ok(new ResponseModel() { status = InfoStatus.Info });
             }
 

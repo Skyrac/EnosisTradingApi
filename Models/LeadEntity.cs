@@ -24,6 +24,8 @@ namespace API.Models
         public string url { get; set; }
         [Required]
         public Category category { get; set; }
+        [Required]
+        public string program_id { get; set; }
     }
     
     public enum LeadType

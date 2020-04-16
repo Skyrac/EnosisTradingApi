@@ -69,6 +69,22 @@ namespace API.Controllers
             return Ok(leads.ToList());
         }
 
+        [Route("country/{country-code}")]
+        [HttpGet]
+        public async Task<IActionResult> GetLeadsByCountryAsync([FromRoute(Name = "country-code")] string country)
+        {
+            var leads = await _leadDatabase.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}'", nameof(LeadEntity), country));
+            return Ok(leads.ToList());
+        }
+
+        [Route("country/{country-code}/{category}")]
+        [HttpGet]
+        public async Task<IActionResult> GetLeadsByCountryAsync([FromRoute(Name = "country-code")] string country, Category category)
+        {
+            var leads = await _leadDatabase.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}' AND {0}.category = {2}", nameof(LeadEntity), country, (int) category));
+            return Ok(leads.ToList());
+        }
+
         [HttpDelete]
         public async Task<IActionResult> DeleteLeads([Required, FromBody] IEnumerable<string> leads)
         {
@@ -80,7 +96,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        [Route("{name}/{country}")]
+        [Route("{name}/country/{country}")]
         public async Task<IActionResult> GetLeadAsync(string name, string country)
         {
             var lead = await _leadDatabase.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.country_code = '{1}' AND {0}.name = '{2}'", nameof(LeadEntity), country, name));

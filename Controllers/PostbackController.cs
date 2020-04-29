@@ -45,10 +45,11 @@ namespace API.Controllers
         }
 
         [Route("adklick")]
+        [Route("")]
         [HttpGet()]
         [HttpPost()]
         [HttpPut()]
-        public async Task<IActionResult> PostbackOrangePie([Required, FromQuery] AdklickPostback entity)
+        public async Task<IActionResult> Postback([Required, FromQuery] NormalPostback entity)
         {
             if (ModelState.IsValid)
             {

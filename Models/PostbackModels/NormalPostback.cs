@@ -2,7 +2,7 @@
 
 namespace API.Models
 {
-    public class AdklickPostback
+    public class NormalPostback
     {
         [FromQuery]
         [BindProperty(SupportsGet = true)]

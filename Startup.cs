@@ -15,7 +15,7 @@ namespace API
 {
     public class Startup
     {
-
+        private const string corsPolicy = "_specifiedOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -26,9 +26,19 @@ namespace API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: corsPolicy,
+                                  builder =>
+                                  {
+                                      builder.WithOrigins("https://money-moon.web.app",
+                                                          "http://www.contoso.com");
+                                  });
+            });
             services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_3_0);
             services.AddAntiforgery();
-            services.AddSwaggerDocument();
+            //services.AddSwaggerDocument();
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
@@ -44,6 +54,7 @@ namespace API
             services.AddSingleton(InitializeCosmosClientInstanceAsync<MineEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<LeadEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddScoped<IMine, MineService>();
+
             services.AddControllers();
         }
 
@@ -72,6 +83,7 @@ namespace API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors(corsPolicy);
             app.UseOpenApi();
             app.UseSwaggerUi3();
             app.UseAuthorization();

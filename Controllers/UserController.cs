@@ -39,11 +39,11 @@ namespace API.Controllers
             if (ModelState.IsValid)
             {
                 registration.email = registration.email.ToLower();
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' OR {0}.name = '{2}'", nameof(UserEntity), registration.email, registration.name));
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' OR {0}.name = '{2}' OR {0}.login_ip = '{3}'", nameof(UserEntity), registration.email, registration.name, HttpContext.Connection.RemoteIpAddress.ToString()));
                 if (user == null)
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
-                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid().ToString(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString() };
+                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid().ToString(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString(), language = registration.language, handy = registration.phone };
 
                     if (!string.IsNullOrEmpty(registration.referal))
                     {
@@ -56,7 +56,7 @@ namespace API.Controllers
                         user.referrer = referal.id;
                     }
                     await _userContext.AddItemAsync(user);
-                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
+                    //Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
                     return Ok(UserModel.FromEntity(user, InfoStatus.Info));
                 }
             }

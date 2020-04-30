@@ -4,6 +4,7 @@ using API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Extensions.Configuration;
@@ -29,16 +30,15 @@ namespace API
 
             services.AddCors(options =>
             {
-                options.AddPolicy(name: corsPolicy,
+                options.AddDefaultPolicy(
                                   builder =>
                                   {
-                                      builder.WithOrigins("https://money-moon.web.app",
-                                                          "http://www.contoso.com");
+                                      builder.WithOrigins("https://money-moon.web.app").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
                                   });
             });
             services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_3_0);
             services.AddAntiforgery();
-            //services.AddSwaggerDocument();
+            services.AddSwaggerDocument();
             services.Configure<CookiePolicyOptions>(options =>
             {
                 // This lambda determines whether user consent for non-essential cookies is needed for a given request.
@@ -80,14 +80,12 @@ namespace API
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseCors();
             app.UseHttpsRedirection();
-
             app.UseRouting();
-            app.UseCors(corsPolicy);
             app.UseOpenApi();
             app.UseSwaggerUi3();
             app.UseAuthorization();
-
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

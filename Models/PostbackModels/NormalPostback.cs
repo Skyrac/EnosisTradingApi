@@ -13,5 +13,14 @@ namespace API.Models
         [FromQuery]
         [BindProperty(SupportsGet = true)]
         public string payment { get; set; }
+        [FromQuery]
+        [BindProperty(SupportsGet = true)]
+        public string reward { get; set; }
+        [FromQuery]
+        [BindProperty(SupportsGet = true)]
+        public string status { get; set; }
+        [FromQuery]
+        [BindProperty(SupportsGet = true)]
+        public string wall { get; set; }
     }
 }

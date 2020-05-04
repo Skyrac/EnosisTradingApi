@@ -36,7 +36,9 @@ namespace API.Controllers
         {
             if(ModelState.IsValid)
             {
-                await _userTaskContext.AddItemAsync(new UserTaskEntity(entity.click_id, entity.aff_id, entity.p_id, entity.status, entity.payout));
+                var payout = 0f;
+                float.TryParse(entity.payout, out payout);
+                await _userTaskContext.AddItemAsync(new UserTaskEntity(entity.click_id, entity.aff_id, entity.p_id, entity.status, payout, "my-lead"));
                 var val = await _userTaskContext.GetItemAsync("1");
                 return Ok(new ResponseModel() { status = InfoStatus.Info });
             }
@@ -53,7 +55,34 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                await _userTaskContext.AddItemAsync(new UserTaskEntity(entity.sub_id, entity.payment, entity.program));
+                var payout = 0f;
+                var status = "0";
+                float.TryParse(entity.payment, out payout);
+                if(!string.IsNullOrEmpty(entity.status))
+                {
+                    status = entity.status;
+                }
+                await _userTaskContext.AddItemAsync(new UserTaskEntity("", entity.sub_id, entity.program, entity.status, payout, entity.wall));
+                return Ok(new ResponseModel() { status = InfoStatus.Info });
+            }
+
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
+        }
+
+        [Route("wannads")]
+        [HttpGet()]
+        public async Task<IActionResult> WannadsPostback([Required, FromQuery] WannadsPostback entity)
+        {
+            if (ModelState.IsValid)
+            {
+                var payout = 0f;
+                var status = "0";
+                float.TryParse(entity.payout, out payout);
+                if (!string.IsNullOrEmpty(entity.status))
+                {
+                    status = entity.status;
+                }
+                await _userTaskContext.AddItemAsync(new UserTaskEntity("", entity.subId, entity.campaign_id, entity.status, payout, "wannads"));
                 return Ok(new ResponseModel() { status = InfoStatus.Info });
             }
 

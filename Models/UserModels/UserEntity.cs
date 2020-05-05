@@ -51,6 +51,7 @@ namespace API.Models
         /// </summary>
         public string referrer { get; set; }
         public DateTime last_interest { get; set; }
+        public Int32 last_surf_claim { get; set; }
 
         public SystemLanguage language { get; set; }
     }

@@ -19,5 +19,6 @@ namespace API.Repository
         Task GetItemsAndCallMethodAsync(string queryString, Action<T> callback);
 
         Task<BulkOperationResponse<U>> BulkUpdateAsync<U>(IEnumerable<U> items) where U : CosmoModel, T;
+        Task<BulkOperationResponse<U>> BulkInsertAsync<U>(IEnumerable<U> items) where U : CosmoModel, T;
     }
 }

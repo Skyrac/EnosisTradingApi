@@ -79,6 +79,29 @@ namespace API.Repository
             await _container.UpsertItemAsync(item, new PartitionKey(id));
         }
 
+        public async Task<BulkOperationResponse<U>> BulkInsertAsync<U>(IEnumerable<U> items) where U : CosmoModel, T
+        {
+            List<Task<OperationsResponse<U>>> operations = new List<Task<OperationsResponse<U>>>(items.Count());
+            foreach (var document in items)
+            {
+                document.id = IdGenerator.GenerateId(typeof(U).Name);
+                operations.Add(CaptureOperationResponse(_container.CreateItemAsync(document, new PartitionKey(document.id)), document));
+            }
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            await Task.WhenAll(operations);
+            stopwatch.Stop();
+
+            var bulkOperationResponse = new BulkOperationResponse<U>()
+            {
+                TotalTimeTaken = stopwatch.Elapsed,
+                TotalRequestUnitsConsumed = operations.Sum(task => task.Result.RequestUnitsConsumed),
+                SuccessfulDocuments = operations.Count(task => task.Result.IsSuccessful),
+                Failures = operations.Where(task => !task.Result.IsSuccessful).Select(task => (task.Result.Item, task.Result.CosmosException)).ToList()
+            };
+
+            return bulkOperationResponse;
+        }
+
         public async Task<BulkOperationResponse<U>> BulkUpdateAsync<U>(IEnumerable<U> items) where U : CosmoModel, T
         {
             List<Task<OperationsResponse<U>>> operations = new List<Task<OperationsResponse<U>>>(items.Count());

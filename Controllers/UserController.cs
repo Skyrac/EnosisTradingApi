@@ -1,12 +1,17 @@
 ﻿using API.Models;
+using API.Models.PostbackModels;
 using API.Models.UserModels;
 using API.Repository;
 using API.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace API.Controllers
@@ -149,14 +154,16 @@ namespace API.Controllers
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), request.user_id, request.user_token));
                 if (user != null && user != default(UserEntity))
                 {
-                    var tasks = await _userTaskContext.GetItemsAsync("SELECT * FROM {0} WHERE {0}.user = '{1}' and {0}.is_checked = false");
-                    if(tasks.Count() > 0)
+                    var tasks = (await _userTaskContext.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.user = '{1}' and {0}.is_checked = false", nameof(UserTaskEntity), request.user_id))).ToList();
+                    await CheckSurfbar(user);
+                    if (tasks.Count() > 0)
                     {
                         foreach (var task in tasks)
                         {
                             task.is_checked = true;
                             user.free_points += task.reward;
                         }
+
                         await _userTaskContext.BulkUpdateAsync(tasks);
                         await _userContext.UpdateItemAsync(user.id, user);
                     }
@@ -165,6 +172,48 @@ namespace API.Controllers
                 return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "no_user_found" });
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "invalid_request" });
+        }
+
+        private async Task CheckSurfbar(UserEntity user)
+        {
+            var webRequest = WebRequest.Create(string.Format("https://www.ebesucher.de/api/visitor_exchange.json/surflink/Skyrac.{0}/earnings/{1}-{2}", user.id, user.last_surf_claim, (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds));
+            webRequest.Credentials = new NetworkCredential("Skyrac", "5J8vk4YQpn5pblTCVO9taVxy3j3rTJqmEIDE238SJOenUiiEik");
+            var response = await webRequest.GetResponseAsync();
+            if (((HttpWebResponse)response).StatusCode == HttpStatusCode.OK)
+            {
+
+                using (Stream dataStream = response.GetResponseStream())
+                {
+                    // Open the stream using a StreamReader for easy access.
+                    StreamReader reader = new StreamReader(dataStream);
+                    // Read the content.
+                    string responseFromServer = reader.ReadToEnd();
+                    // Display the content.
+                    Console.WriteLine(responseFromServer);
+                    if (!string.IsNullOrEmpty(responseFromServer))
+                    {
+                        user.last_surf_claim = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+                        var surfTasks = JsonConvert.DeserializeObject<SurfModel[]>(responseFromServer);
+                        if (surfTasks != null && surfTasks.Length > 0)
+                        {
+                            var newTasks = new List<UserTaskEntity>();
+                            foreach (var surfTask in surfTasks)
+                            {
+                                var convertedValue = (float)Math.Round(float.Parse(surfTask.value, new CultureInfo("en")
+                                {
+                                    NumberFormat = { NumberDecimalSeparator = "." }
+                                }), 2);
+                                var newTask = new UserTaskEntity("", user.id, "eBesucher", "1", 0.000021f * convertedValue, "eBesucher") { is_checked = true };
+                                newTasks.Add(newTask);
+                                user.free_points += newTask.reward;
+                            }
+                            await _userTaskContext.BulkInsertAsync(newTasks);
+                            await _userContext.UpdateItemAsync(user.id, user);
+                        }
+                    }
+                }
+            }
+            response.Close();
         }
 
         [Route("login")]

@@ -1,6 +1,5 @@
 using API.Models;
 using API.Repository;
-using API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -49,9 +48,8 @@ namespace API
                                        // databaseName: "MoneyMoonDb"));
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserTaskEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
-            services.AddSingleton(InitializeCosmosClientInstanceAsync<MineEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            services.AddSingleton(InitializeCosmosClientInstanceAsync<StakeEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<LeadEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
-            services.AddScoped<IMine, MineService>();
 
             services.AddControllers();
         }

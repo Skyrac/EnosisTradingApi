@@ -1,12 +1,12 @@
 ﻿using API.Models;
 using API.Models.UserModels;
 using API.Repository;
-using API.Services;
 using API.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace API.Controllers
@@ -16,20 +16,23 @@ namespace API.Controllers
     {
         private ICosmosDatabase<UserTaskEntity> _userTaskContext;
         private ICosmosDatabase<UserEntity> _userContext;
-        private ICosmosDatabase<MineEntity> _miningContext;
-        private IMine _miner;
+        private ICosmosDatabase<StakeEntity> _stakingContext;
 
         public static List<MyLeadPostback> posts = new List<MyLeadPostback>();
 
         private readonly ILogger<PostbackController> _logger;
 
-        public UserController(ILogger<PostbackController> logger, ICosmosDatabase<UserTaskEntity> userTaskContext, ICosmosDatabase<UserEntity> userContext, ICosmosDatabase<MineEntity> miningContext, IMine miner)
+        private const int MIN_STAKE = 10000;
+        private const float MIN_INTEREST = 0.0001f;
+        private const float INTEREST_INCREASE = 0.00012f;
+        private const float INTEREST_DECREASE = 0.00012f;
+
+        public UserController(ILogger<PostbackController> logger, ICosmosDatabase<UserTaskEntity> userTaskContext, ICosmosDatabase<UserEntity> userContext, ICosmosDatabase<StakeEntity> miningContext)
         {
             _logger = logger;
             _userTaskContext = userTaskContext;
             _userContext = userContext;
-            _miner = miner;
-            _miningContext = miningContext;
+            _stakingContext = miningContext;
         }
 
         [Route("register")]
@@ -43,7 +46,7 @@ namespace API.Controllers
                 if (user == null)
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
-                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid().ToString(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString(), language = registration.language, handy = registration.phone };
+                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid().ToString(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString(), language = registration.language, handy = registration.phone, last_interest = DateTime.Now, interest = MIN_INTEREST };
 
                     if (!string.IsNullOrEmpty(registration.referal))
                     {
@@ -93,7 +96,6 @@ namespace API.Controllers
                     user.is_active = true;
                     user.referal_id = string.Format("R{0}A", user.id);
                     await _userContext.UpdateItemAsync(user.id, user);
-                    await _miningContext.AddItemAsync(new MineEntity() { last_check = DateTime.Now, power = 0.0f, start_date = DateTime.Now, mined_points = 0.0f, remaining_time = -717, user = user.id });
                     Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_successfull_activation"), Language.Translate(user.language, "content_successfull_activation"));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "successful_activated" });
                 }
@@ -138,6 +140,33 @@ namespace API.Controllers
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
         }
 
+        [Route("refresh")]
+        [HttpPut]
+        public async Task<IActionResult> Refresh([FromBody] UserReferenceModel request)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), request.user_id, request.user_token));
+                if (user != null && user != default(UserEntity))
+                {
+                    var tasks = await _userTaskContext.GetItemsAsync("SELECT * FROM {0} WHERE {0}.user = '{1}' and {0}.is_checked = false");
+                    if(tasks.Count() > 0)
+                    {
+                        foreach (var task in tasks)
+                        {
+                            task.is_checked = true;
+                            user.free_points += task.reward;
+                        }
+                        await _userTaskContext.BulkUpdateAsync(tasks);
+                        await _userContext.UpdateItemAsync(user.id, user);
+                    }
+                    return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                }
+                return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "no_user_found" });
+            }
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "invalid_request" });
+        }
+
         [Route("login")]
         [HttpPut]
         public async Task<IActionResult> Login([FromBody] UserLoginModel login)
@@ -147,6 +176,22 @@ namespace API.Controllers
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email.ToLower(), login.password));
                 if (user != null && user != default(UserEntity))
                 {
+                    if (user.staked_points >= MIN_STAKE)
+                    {
+                        var deltaInterest = DateTime.Now.Subtract(user.last_interest);
+                        for(var i = 1; i < Math.Floor(deltaInterest.TotalHours / 24); i++)
+                        {
+                            user.interest = Math.Max(0, user.interest - INTEREST_DECREASE);
+                        }
+                        if (deltaInterest.TotalHours >= 24)
+                        {
+                            user.last_interest = DateTime.Now;
+                            user.interest = Math.Min(MIN_INTEREST, user.interest + INTEREST_INCREASE);
+                            var earned_interest = user.staked_points * user.interest;
+                            user.free_points += earned_interest;
+                            await _stakingContext.AddItemAsync(new StakeEntity() { user = user.id, date = DateTime.Now, points = earned_interest });
+                        }
+                    }
                     user.user_token = Guid.NewGuid().ToString();
                     await _userContext.UpdateItemAsync(user.id, user);
                     return Ok(UserModel.FromEntity(user, InfoStatus.Info));
@@ -154,6 +199,72 @@ namespace API.Controllers
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
         }
+
+
+        [Route("stake")]
+        [HttpPost]
+        public async Task<IActionResult> Stake([FromBody] UserStakeModel stakeObj)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), stakeObj.user_id, stakeObj.user_token));
+                if (user != null && user != default(UserEntity))
+                {
+                    if (stakeObj.amount < MIN_STAKE)
+                    {
+                        return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "invalid_invest_value" });
+                    }
+                    else if (user.free_points >= stakeObj.amount)
+                    {
+                        user.free_points -= stakeObj.amount;
+                        user.staked_points += stakeObj.amount;
+                        await _stakingContext.AddItemAsync(new StakeEntity() { date = DateTime.Now, points = stakeObj.amount, user = user.id });
+                        await _userContext.UpdateItemAsync(user.id, user);
+                        return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                    }
+                    else
+                    {
+                        return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "not_enough_monies" });
+                    }
+                }
+                return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "no_user_found" });
+            }
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "invalid_request" });
+        }
+
+        [Route("withdraw")]
+        [HttpPost]
+        public async Task<IActionResult> Withdraw([FromBody] UserStakeModel stakeObj)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), stakeObj.user_id, stakeObj.user_token));
+                if (user != null && user != default(UserEntity))
+                {
+                    if (stakeObj.amount < 0)
+                    {
+                        return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "invalid_withdraw_value" });
+                    }
+                    else if (user.staked_points >= stakeObj.amount)
+                    {
+                        user.free_points += stakeObj.amount;
+                        user.staked_points -= stakeObj.amount;
+                        user.interest = MIN_INTEREST;
+                        await _stakingContext.AddItemAsync(new StakeEntity() { date = DateTime.Now, points = -stakeObj.amount, user = user.id });
+                        await _userContext.UpdateItemAsync(user.id, user);
+                        return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                    }
+                    else
+                    {
+                        return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "not_enough_stake" });
+                    }
+                }
+                return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "no_user_found" });
+            }
+            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "invalid_request" });
+        }
+
+
 
         [Route("forgot/{email}")]
         [HttpPost]
@@ -186,25 +297,6 @@ namespace API.Controllers
             return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "wrong_entries" });
         }
 
-        [Route("mining-stats")]
-        [HttpPut]
-        public async Task<IActionResult> GetMiningStats([FromBody] UserReferenceModel userRef)
-        {
-            if(ModelState.IsValid)
-            {
-                var user = await _userContext.GetItemAsync(userRef.user_id);
-                if(user != null && user.user_token == userRef.user_token)
-                {
-                    var power = await _miner.GetUserPowerAsync(user);
-                    var model = UserModel.FromEntity(user);
-                    model.power = power;
-                    await _userContext.UpdateItemAsync(user.id, user);
-                    return Ok(model);
-                }
-            }
-
-            return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "invalid_user_ref" });
-        }
 
         [Route("forgot/{email}/{key}/{password}")]
         [HttpPost]

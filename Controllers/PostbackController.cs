@@ -1,6 +1,5 @@
 ﻿using API.Models;
 using API.Repository;
-using API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
@@ -14,20 +13,16 @@ namespace API.Controllers
     {
         private ICosmosDatabase<UserTaskEntity> _userTaskContext;
         private ICosmosDatabase<UserEntity> _userContext;
-        private ICosmosDatabase<MineEntity> _miningContext;
-        private IMine _miner;
 
         public static List<MyLeadPostback> posts = new List<MyLeadPostback>();
 
         private readonly ILogger<PostbackController> _logger;
 
-        public PostbackController(ILogger<PostbackController> logger, ICosmosDatabase<UserTaskEntity> userTaskContext, ICosmosDatabase<UserEntity> userContext, ICosmosDatabase<MineEntity> miningContext, IMine miner)
+        public PostbackController(ILogger<PostbackController> logger, ICosmosDatabase<UserTaskEntity> userTaskContext, ICosmosDatabase<UserEntity> userContext)
         {
             _logger = logger;
             _userTaskContext = userTaskContext;
             _userContext = userContext;
-            _miner = miner;
-            _miningContext = miningContext;
         }
 
         [Route("my-lead")]

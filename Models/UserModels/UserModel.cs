@@ -18,14 +18,12 @@ namespace API.Models.UserModels
         /// Paypal E-Mail address
         /// </summary>
         public string paypal { get; set; }
-        public float used_bound_points { get; set; }
         public float free_points { get; set; }
         public string referal_id { get; set; }
-        public DateTime passive_activation { get; set; }
-        public float passive_time { get; set; }
+        public int staked_points { get; set; }
+        public float interest { get; set; }
+        public DateTime last_interest { get; set; }
         public SystemLanguage language { get; set; }
-
-        public float power { get; set; }
 
         public static UserModel FromEntity(UserEntity user, InfoStatus status = InfoStatus.Info)
         {
@@ -40,11 +38,11 @@ namespace API.Models.UserModels
                 handy = user.handy,
                 two_way_auth = user.two_way_auth,
                 paypal = user.paypal,
-                used_bound_points = user.used_bound_points,
                 free_points = user.free_points,
+                staked_points = user.staked_points,
+                interest = user.interest,
                 referal_id = user.referal_id,
-                passive_activation = user.passive_activation,
-                passive_time = user.passive_time,
+                last_interest = user.last_interest,
                 language = user.language
             };
         }

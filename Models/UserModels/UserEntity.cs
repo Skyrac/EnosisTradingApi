@@ -17,6 +17,9 @@ namespace API.Models
         public string name { get; set; }
         
         public string user_token { get; set; }
+
+        public int staked_points { get; set; }
+        public float interest { get; set; } = 0.00012f;
         public string password { get; set; }
 
         public string password_forgotten_key { get; set; }
@@ -47,15 +50,7 @@ namespace API.Models
         /// user_id of the referrer
         /// </summary>
         public string referrer { get; set; }
-
-        public DateTime passive_activation { get; set; }
-
-        public DateTime last_check { get; set; }
-        
-        /// <summary>
-        /// Remaining Time for passive farming
-        /// </summary>
-        public float passive_time { get; set; }
+        public DateTime last_interest { get; set; }
 
         public SystemLanguage language { get; set; }
     }

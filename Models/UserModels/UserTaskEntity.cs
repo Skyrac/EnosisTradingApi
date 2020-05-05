@@ -14,6 +14,8 @@
         public float reward { get; set; }
         public string wall { get; set; }
 
+        public bool is_checked { get; set; }
+
 
         public UserTaskEntity() { }
 

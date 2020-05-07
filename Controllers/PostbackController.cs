@@ -31,11 +31,11 @@ namespace API.Controllers
         {
             if(ModelState.IsValid)
             {
-                var payout = 0f;
-                float.TryParse(entity.payout, out payout);
+                var payout = 0.0d;
+                double.TryParse(entity.payout, out payout);
                 await _userTaskContext.AddItemAsync(new UserTaskEntity(entity.click_id, entity.aff_id, entity.p_id, entity.status, payout, "my-lead"));
                 var val = await _userTaskContext.GetItemAsync("1");
-                return Ok(new ResponseModel() { status = InfoStatus.Info });
+                return Ok();
             }
 
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
@@ -50,15 +50,15 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var payout = 0f;
+                var payout = 0.0d;
                 var status = "0";
-                float.TryParse(entity.payment, out payout);
+                double.TryParse(entity.payment, out payout);
                 if(!string.IsNullOrEmpty(entity.status))
                 {
                     status = entity.status;
                 }
                 await _userTaskContext.AddItemAsync(new UserTaskEntity("", entity.sub_id, entity.program, entity.status, payout, entity.wall));
-                return Ok(new ResponseModel() { status = InfoStatus.Info });
+                return Ok();
             }
 
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning });
@@ -70,15 +70,15 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var payout = 0f;
+                var payout = 0.0d;
                 var status = "0";
-                float.TryParse(entity.payout, out payout);
+                double.TryParse(entity.payout, out payout);
                 if (!string.IsNullOrEmpty(entity.status))
                 {
                     status = entity.status;
                 }
                 await _userTaskContext.AddItemAsync(new UserTaskEntity("", entity.subId, entity.campaign_id, entity.status, payout, "wannads"));
-                return Ok(new ResponseModel() { status = InfoStatus.Info });
+                return Ok();
             }
 
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning });

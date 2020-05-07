@@ -18,10 +18,10 @@ namespace API.Models.UserModels
         /// Paypal E-Mail address
         /// </summary>
         public string paypal { get; set; }
-        public float free_points { get; set; }
+        public double free_points { get; set; }
         public string referal_id { get; set; }
         public int staked_points { get; set; }
-        public float interest { get; set; }
+        public double interest { get; set; }
         public DateTime last_interest { get; set; }
         public SystemLanguage language { get; set; }
 

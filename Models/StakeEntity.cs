@@ -6,7 +6,7 @@ namespace API.Models
     {
         public string user { get; set; }
         public DateTime date { get; set; }
-        public float points { get; set; }
+        public double points { get; set; }
 
     }
 }

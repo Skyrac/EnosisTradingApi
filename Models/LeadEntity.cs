@@ -15,7 +15,7 @@ namespace API.Models
         /// </summary>
         [Required]
         ///In Punkten
-        public float commission { get; set; }
+        public double commission { get; set; }
         //Two Letter ISO Region Code
         [Required]
         public string country_code { get; set; }

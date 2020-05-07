@@ -28,9 +28,9 @@ namespace API.Controllers
         private readonly ILogger<PostbackController> _logger;
 
         private const int MIN_STAKE = 10000;
-        private const float MIN_INTEREST = 0.0001f;
-        private const float INTEREST_INCREASE = 0.00012f;
-        private const float INTEREST_DECREASE = 0.00012f;
+        private const double MIN_INTEREST = 0.0001f;
+        private const double INTEREST_INCREASE = 0.00012f;
+        private const double INTEREST_DECREASE = 0.00012f;
 
         public UserController(ILogger<PostbackController> logger, ICosmosDatabase<UserTaskEntity> userTaskContext, ICosmosDatabase<UserEntity> userContext, ICosmosDatabase<StakeEntity> miningContext)
         {
@@ -199,7 +199,7 @@ namespace API.Controllers
                             var newTasks = new List<UserTaskEntity>();
                             foreach (var surfTask in surfTasks)
                             {
-                                var convertedValue = (float)Math.Round(float.Parse(surfTask.value, new CultureInfo("en")
+                                var convertedValue = (double)Math.Round(double.Parse(surfTask.value, new CultureInfo("en")
                                 {
                                     NumberFormat = { NumberDecimalSeparator = "." }
                                 }), 2);
@@ -231,7 +231,7 @@ namespace API.Controllers
                         var days = deltaInterest.TotalDays;
                         if (days > 1)
                         {
-                            for (var i = 0; i < days - 1; i++)
+                            for (var i = 1; i < Math.Floor(days); i++)
                             {
                                 user.interest = Math.Max(0, user.interest - INTEREST_DECREASE);
                             }
@@ -239,7 +239,7 @@ namespace API.Controllers
                         if (deltaInterest.Days >= 1)
                         {
                             user.last_interest = DateTime.Now;
-                            user.interest = Math.Min(MIN_INTEREST, user.interest + INTEREST_INCREASE);
+                            user.interest = Math.Max(MIN_INTEREST, Math.Round(user.interest + INTEREST_INCREASE, 6));
                             var earned_interest = user.staked_points * user.interest;
                             user.free_points += earned_interest;
                             await _stakingContext.AddItemAsync(new StakeEntity() { user = user.id, date = DateTime.Now, points = earned_interest });

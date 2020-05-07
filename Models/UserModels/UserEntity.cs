@@ -19,7 +19,7 @@ namespace API.Models
         public string user_token { get; set; }
 
         public int staked_points { get; set; }
-        public float interest { get; set; } = 0.00012f;
+        public double interest { get; set; } = 0.00012f;
         public string password { get; set; }
 
         public string password_forgotten_key { get; set; }
@@ -40,8 +40,8 @@ namespace API.Models
         /// Displays the amount of used bound points
         /// For the "usable bound points" we have to check all user mines collected points - used_bound_points
         /// </summary>
-        public float used_bound_points { get; set; }
-        public float free_points { get; set; }
+        public double used_bound_points { get; set; }
+        public double free_points { get; set; }
         /// <summary>
         /// users own referal_id (=[R{user_id}A]
         /// </summary>

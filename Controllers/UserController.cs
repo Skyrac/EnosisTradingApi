@@ -228,11 +228,15 @@ namespace API.Controllers
                     if (user.staked_points >= MIN_STAKE)
                     {
                         var deltaInterest = DateTime.Now.Subtract(user.last_interest);
-                        for(var i = 1; i < Math.Floor(deltaInterest.TotalHours / 24); i++)
+                        var days = deltaInterest.TotalDays;
+                        if (days > 1)
                         {
-                            user.interest = Math.Max(0, user.interest - INTEREST_DECREASE);
+                            for (var i = 0; i < days - 1; i++)
+                            {
+                                user.interest = Math.Max(0, user.interest - INTEREST_DECREASE);
+                            }
                         }
-                        if (deltaInterest.TotalHours >= 24)
+                        if (deltaInterest.Days >= 1)
                         {
                             user.last_interest = DateTime.Now;
                             user.interest = Math.Min(MIN_INTEREST, user.interest + INTEREST_INCREASE);

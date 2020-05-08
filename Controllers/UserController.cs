@@ -203,7 +203,7 @@ namespace API.Controllers
                                 {
                                     NumberFormat = { NumberDecimalSeparator = "." }
                                 }), 2);
-                                var newTask = new UserTaskEntity("", user.id, "eBesucher", "1", 0.000021f * convertedValue, "eBesucher") { is_checked = true };
+                                var newTask = new UserTaskEntity("", user.id, "eBesucher", "1", 0.000021f * convertedValue, "eBesucher", "") { is_checked = true };
                                 newTasks.Add(newTask);
                                 user.free_points += newTask.reward;
                             }

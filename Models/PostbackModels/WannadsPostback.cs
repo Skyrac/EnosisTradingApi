@@ -16,5 +16,8 @@ namespace API.Models
         [FromQuery]
         [BindProperty(SupportsGet = true)]
         public string status { get; set; }
+        [FromQuery]
+        [BindProperty(SupportsGet = true)]
+        public string transId { get; set; }
     }
 }

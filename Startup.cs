@@ -1,4 +1,5 @@
 using API.Models;
+using API.Models.UserModels;
 using API.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -50,7 +51,6 @@ namespace API
             services.AddSingleton(InitializeCosmosClientInstanceAsync<UserEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<StakeEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddSingleton(InitializeCosmosClientInstanceAsync<LeadEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
-
             services.AddControllers();
         }
 

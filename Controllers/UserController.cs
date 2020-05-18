@@ -51,8 +51,10 @@ namespace API.Controllers
                 if (user == null)
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
-                    user = new UserEntity() { name = registration.name, user_token = Guid.NewGuid().ToString(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString(), language = registration.language, handy = registration.phone, last_interest = DateTime.Now, interest = MIN_INTEREST };
-
+                    
+                    user = new UserEntity() { name = registration.name, userSessions = new List<UserSession>(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString(), language = registration.language, handy = registration.phone, last_interest = DateTime.Now, interest = MIN_INTEREST };
+                    var session = new UserSession() { ip = HttpContext.Connection.RemoteIpAddress.ToString(), email = registration.email, token = Guid.NewGuid().ToString() };
+                    user.userSessions.Add(new UserSession() { ip = HttpContext.Connection.RemoteIpAddress.ToString(), email = registration.email, token = Guid.NewGuid().ToString() });
                     if (!string.IsNullOrEmpty(registration.referal))
                     {
                         var referal = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.referal_id = '{1}'", nameof(UserEntity), registration.referal));
@@ -65,7 +67,7 @@ namespace API.Controllers
                     }
                     await _userContext.AddItemAsync(user);
                     //Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
-                    return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                    return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
                 }
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "already_exist" });
@@ -79,7 +81,7 @@ namespace API.Controllers
             {
                 var user = await _userContext.GetItemAsync(activation.user_id);
 
-                if (user != null && user.user_token.Equals(activation.user_token) && !user.is_active)
+                if (user != null && user.ContainsSessionToken(activation.user_token) && !user.is_active)
                 {
                     Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
@@ -96,7 +98,7 @@ namespace API.Controllers
             {
                 var user = await _userContext.GetItemAsync(activation.user_id);
 
-                if (user != null && user.user_token.Equals(activation.user_token) && !string.IsNullOrEmpty(activation.activation_key) && user.activation_key.Equals(activation.activation_key) && !user.is_active)
+                if (user != null && user.ContainsSessionToken(activation.user_token) && !string.IsNullOrEmpty(activation.activation_key) && user.activation_key.Equals(activation.activation_key) && !user.is_active)
                 {
                     user.is_active = true;
                     user.referal_id = string.Format("R{0}A", user.id);
@@ -128,7 +130,7 @@ namespace API.Controllers
                         }
                     }
                 }
-                if (user != null && user.user_token.Equals(updateInfos.user_token))
+                if (user != null && user.ContainsSessionToken(updateInfos.user_token))
                 {
                     UserModel.Update(ref user, updateInfos);
                     await _userContext.UpdateItemAsync(user.id, user);
@@ -151,8 +153,8 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), request.user_id, request.user_token));
-                if (user != null && user != default(UserEntity))
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}'", nameof(UserEntity), request.user_id));
+                if (user != null && user != default(UserEntity) && user.ContainsSessionToken(request.user_token))
                 {
                     var tasks = (await _userTaskContext.GetItemsAsync(string.Format("SELECT * FROM {0} WHERE {0}.user = '{1}' and {0}.is_checked = false", nameof(UserTaskEntity), request.user_id))).ToList();
                     await CheckSurfbar(user);
@@ -167,7 +169,7 @@ namespace API.Controllers
                         await _userTaskContext.BulkUpdateAsync(tasks);
                         await _userContext.UpdateItemAsync(user.id, user);
                     }
-                    return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                    return Ok(UserModel.FromEntity(user, request.user_token, InfoStatus.Info));
                 }
                 return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "no_user_found" });
             }
@@ -216,6 +218,62 @@ namespace API.Controllers
             response.Close();
         }
 
+        async Task HandleLogin(UserEntity user, UserSession session)
+        {
+            var token = Guid.NewGuid().ToString();
+            session.token = token;
+            await _userContext.UpdateItemAsync(user.id, user);
+
+        }
+
+        async Task UserStake(UserEntity user)
+        {
+            if (user.staked_points >= MIN_STAKE)
+            {
+                var deltaInterest = DateTime.Now.Subtract(user.last_interest);
+                var days = deltaInterest.TotalDays;
+                if (days > 1)
+                {
+                    for (var i = 1; i < Math.Floor(days); i++)
+                    {
+                        user.interest = Math.Max(0, user.interest - INTEREST_DECREASE);
+                    }
+                }
+                if (deltaInterest.Days >= 1)
+                {
+                    user.last_interest = DateTime.Now;
+                    user.interest = Math.Max(MIN_INTEREST, Math.Round(user.interest + INTEREST_INCREASE, 6));
+                    var earned_interest = user.staked_points * user.interest;
+                    user.free_points += earned_interest;
+                    await _stakingContext.AddItemAsync(new StakeEntity() { user = user.id, date = DateTime.Now, points = earned_interest });
+                }
+            }
+        }
+
+        [Route("auto-login")]
+        [HttpPut]
+        public async Task<IActionResult> Login([FromBody] UserReferenceModel userRef)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}'", nameof(UserEntity), userRef.user_id));
+                var ip = HttpContext.Connection.RemoteIpAddress.ToString();
+                var session = user.GetSession(ip);
+                if (user != null && user != default(UserEntity))
+                {
+                    if (session == null || !session.token.Equals(userRef.user_token))
+                    {
+                        return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
+                    }
+
+                    await UserStake(user);
+                    await HandleLogin(user, session);
+                    return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
+                }
+            }
+            return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
+        }
+
         [Route("login")]
         [HttpPut]
         public async Task<IActionResult> Login([FromBody] UserLoginModel login)
@@ -225,29 +283,17 @@ namespace API.Controllers
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' AND {0}.password = '{2}'", nameof(UserEntity), login.email.ToLower(), login.password));
                 if (user != null && user != default(UserEntity))
                 {
-                    if (user.staked_points >= MIN_STAKE)
+                    var ip = HttpContext.Connection.RemoteIpAddress.ToString();
+                    var session = user.GetSession(ip);
+                    if (session == null)
                     {
-                        var deltaInterest = DateTime.Now.Subtract(user.last_interest);
-                        var days = deltaInterest.TotalDays;
-                        if (days > 1)
-                        {
-                            for (var i = 1; i < Math.Floor(days); i++)
-                            {
-                                user.interest = Math.Max(0, user.interest - INTEREST_DECREASE);
-                            }
-                        }
-                        if (deltaInterest.Days >= 1)
-                        {
-                            user.last_interest = DateTime.Now;
-                            user.interest = Math.Max(MIN_INTEREST, Math.Round(user.interest + INTEREST_INCREASE, 6));
-                            var earned_interest = user.staked_points * user.interest;
-                            user.free_points += earned_interest;
-                            await _stakingContext.AddItemAsync(new StakeEntity() { user = user.id, date = DateTime.Now, points = earned_interest });
-                        }
+                        session = new UserSession() { ip = ip, email = user.email };
+                        user.userSessions.Add(session);
                     }
-                    user.user_token = Guid.NewGuid().ToString();
-                    await _userContext.UpdateItemAsync(user.id, user);
-                    return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+
+                    await UserStake(user);
+                    await HandleLogin(user, session);
+                    return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
                 }
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
@@ -260,8 +306,8 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), stakeObj.user_id, stakeObj.user_token));
-                if (user != null && user != default(UserEntity))
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}'", nameof(UserEntity), stakeObj.user_id));
+                if (user != null && user != default(UserEntity) && user.ContainsSessionToken(stakeObj.user_token))
                 {
                     if (stakeObj.amount < MIN_STAKE)
                     {
@@ -273,7 +319,7 @@ namespace API.Controllers
                         user.staked_points += stakeObj.amount;
                         await _stakingContext.AddItemAsync(new StakeEntity() { date = DateTime.Now, points = stakeObj.amount, user = user.id });
                         await _userContext.UpdateItemAsync(user.id, user);
-                        return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                        return Ok(UserModel.FromEntity(user, stakeObj.user_token, InfoStatus.Info));
                     }
                     else
                     {
@@ -291,8 +337,8 @@ namespace API.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}' AND {0}.user_token = '{2}'", nameof(UserEntity), stakeObj.user_id, stakeObj.user_token));
-                if (user != null && user != default(UserEntity))
+                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}'", nameof(UserEntity), stakeObj.user_id));
+                if (user != null && user != default(UserEntity) && user.ContainsSessionToken(stakeObj.user_token))
                 {
                     if (stakeObj.amount < 0)
                     {
@@ -305,7 +351,7 @@ namespace API.Controllers
                         user.interest = MIN_INTEREST;
                         await _stakingContext.AddItemAsync(new StakeEntity() { date = DateTime.Now, points = -stakeObj.amount, user = user.id });
                         await _userContext.UpdateItemAsync(user.id, user);
-                        return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                        return Ok(UserModel.FromEntity(user, stakeObj.user_token, InfoStatus.Info));
                     }
                     else
                     {
@@ -361,9 +407,16 @@ namespace API.Controllers
             {
                 user.password = password;
                 user.password_forgotten_key = "";
-                user.user_token = Guid.NewGuid().ToString();
+                var ip = HttpContext.Connection.RemoteIpAddress.ToString();
+                var session = user.GetSession(ip);
+                if (session == null)
+                {
+                    session = new UserSession() { email = user.email, ip = ip };
+                    user.userSessions.Add(session);
+                }
+                session.token = Guid.NewGuid().ToString();
                 await _userContext.UpdateItemAsync(user.id, user);
-                return Ok(UserModel.FromEntity(user, InfoStatus.Info));
+                return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Error, text = "wrong_entries" });
         }

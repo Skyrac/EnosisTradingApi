@@ -1,5 +1,7 @@
-﻿using API.Utility;
+﻿using API.Models.UserModels;
+using API.Utility;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace API.Models
@@ -16,7 +18,7 @@ namespace API.Models
 
         public string name { get; set; }
         
-        public string user_token { get; set; }
+        public List<UserSession> userSessions { get; set; }
 
         public int staked_points { get; set; }
         public double interest { get; set; } = 0.00012f;
@@ -54,5 +56,41 @@ namespace API.Models
         public Int32 last_surf_claim { get; set; }
 
         public SystemLanguage language { get; set; }
+
+        public bool ContainsSessionToken(string token)
+        {
+            foreach(var session in userSessions)
+            {
+                if(session.token.Equals(token))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool ContainsSessionIp(string ip)
+        {
+            foreach (var session in userSessions)
+            {
+                if (session.ip.Equals(ip))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public UserSession GetSession(string ip)
+        {
+            foreach (var session in userSessions)
+            {
+                if (session.ip.Equals(ip))
+                {
+                    return session;
+                }
+            }
+            return null;
+        }
     }
 }

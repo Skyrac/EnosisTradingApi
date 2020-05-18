@@ -25,7 +25,7 @@ namespace API.Models.UserModels
         public DateTime last_interest { get; set; }
         public SystemLanguage language { get; set; }
 
-        public static UserModel FromEntity(UserEntity user, InfoStatus status = InfoStatus.Info)
+        public static UserModel FromEntity(UserEntity user, string token, InfoStatus status = InfoStatus.Info)
         {
             return new UserModel()
             {
@@ -33,7 +33,7 @@ namespace API.Models.UserModels
                 status = status,
                 email = user.email,
                 name = user.name,
-                user_token = user.user_token,
+                user_token = token,
                 is_active = user.is_active,
                 handy = user.handy,
                 two_way_auth = user.two_way_auth,

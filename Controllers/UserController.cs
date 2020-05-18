@@ -53,8 +53,8 @@ namespace API.Controllers
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);
                     
                     user = new UserEntity() { name = registration.name, userSessions = new List<UserSession>(), activation_key = activationKey, email = registration.email, password = registration.password, login_ip = HttpContext.Connection.RemoteIpAddress.ToString(), language = registration.language, handy = registration.phone, last_interest = DateTime.Now, interest = MIN_INTEREST };
-                    var session = new UserSession() { ip = HttpContext.Connection.RemoteIpAddress.ToString(), email = registration.email, token = Guid.NewGuid().ToString() };
-                    user.userSessions.Add(new UserSession() { ip = HttpContext.Connection.RemoteIpAddress.ToString(), email = registration.email, token = Guid.NewGuid().ToString() });
+                    var session = new UserSession() { ip = HttpContext.Connection.RemoteIpAddress.ToString(), token = Guid.NewGuid().ToString() };
+                    user.userSessions.Add(new UserSession() { ip = HttpContext.Connection.RemoteIpAddress.ToString(), token = Guid.NewGuid().ToString() });
                     if (!string.IsNullOrEmpty(registration.referal))
                     {
                         var referal = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.referal_id = '{1}'", nameof(UserEntity), registration.referal));
@@ -287,7 +287,7 @@ namespace API.Controllers
                     var session = user.GetSession(ip);
                     if (session == null)
                     {
-                        session = new UserSession() { ip = ip, email = user.email };
+                        session = new UserSession() { ip = ip };
                         user.userSessions.Add(session);
                     }
 
@@ -411,7 +411,7 @@ namespace API.Controllers
                 var session = user.GetSession(ip);
                 if (session == null)
                 {
-                    session = new UserSession() { email = user.email, ip = ip };
+                    session = new UserSession() { ip = ip };
                     user.userSessions.Add(session);
                 }
                 session.token = Guid.NewGuid().ToString();

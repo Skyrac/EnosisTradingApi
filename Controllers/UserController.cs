@@ -258,9 +258,9 @@ namespace API.Controllers
             {
                 var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.id = '{1}'", nameof(UserEntity), userRef.user_id));
                 var ip = HttpContext.Connection.RemoteIpAddress.ToString();
-                var session = user.GetSession(ip);
                 if (user != null && user != default(UserEntity))
                 {
+                    var session = user.GetSession(ip);
                     if (session == null || !session.token.Equals(userRef.user_token))
                     {
                         return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });
@@ -268,7 +268,8 @@ namespace API.Controllers
 
                     await UserStake(user);
                     await HandleLogin(user, session);
-                    return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
+                    var userModel = UserModel.FromEntity(user, session.token, InfoStatus.Info);
+                    return Ok(userModel);
                 }
             }
             return BadRequest(new ResponseModel() { status = InfoStatus.Warning, text = "wrong_entries" });

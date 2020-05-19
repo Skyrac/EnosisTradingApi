@@ -47,7 +47,10 @@ namespace API.Controllers
             if (ModelState.IsValid)
             {
                 registration.email = registration.email.ToLower();
-                var user = await _userContext.GetItemByQueryAsync(string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' OR {0}.name = '{2}' OR {0}.login_ip = '{3}'", nameof(UserEntity), registration.email, registration.name, HttpContext.Connection.RemoteIpAddress.ToString()));
+                //WHERE ARRAY_CONTAINS(c.userSessions, {ip: "test"}, true)
+                var ipQuery = "{ip: '" + HttpContext.Connection.RemoteIpAddress.ToString() + "'}";
+                var query = string.Format("SELECT * FROM {0} WHERE {0}.email = '{1}' OR {0}.name = '{2}' OR ARRAY_CONTAINS({0}.userSessions, {3}, true)", nameof(UserEntity), registration.email, registration.name, ipQuery);
+                var user = await _userContext.GetItemByQueryAsync(query);
                 if (user == null)
                 {
                     var activationKey = Guid.NewGuid().ToString().Substring(0, 4);

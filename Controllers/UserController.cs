@@ -68,7 +68,7 @@ namespace API.Controllers
                         user.referrer = referal.id;
                     }
                     await _userContext.AddItemAsync(user);
-                    var url = string.Format("https://moneymoon.app/?activate={0}", user.activation_key);
+                    var url = string.Format("https://moneymoon.app/?activate={0}&user={1}", user.activation_key, user.id);
                     Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key, url));
                     return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
                 }
@@ -86,7 +86,7 @@ namespace API.Controllers
 
                 if (user != null && user.ContainsSessionToken(activation.user_token) && !user.is_active)
                 {
-                    var url = string.Format("https://moneymoon.app/?activate={0}", user.activation_key);
+                    var url = string.Format("https://moneymoon.app/?activate={0}&user={1}", user.activation_key, user.id);
                     Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key, url));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
                 }
@@ -102,7 +102,7 @@ namespace API.Controllers
             {
                 var user = await _userContext.GetItemAsync(activation.user_id);
 
-                if (user != null && user.ContainsSessionToken(activation.user_token) && !string.IsNullOrEmpty(activation.activation_key) && user.activation_key.Equals(activation.activation_key) && !user.is_active)
+                if (user != null && !string.IsNullOrEmpty(activation.activation_key) && user.activation_key.Equals(activation.activation_key) && !user.is_active)
                 {
                     user.is_active = true;
                     user.referal_id = string.Format("R{0}A", user.id);
@@ -140,7 +140,7 @@ namespace API.Controllers
                     await _userContext.UpdateItemAsync(user.id, user);
                     if (!user.is_active)
                     {
-                        var url = string.Format("https://moneymoon.app/?activate={0}", user.activation_key);
+                        var url = string.Format("https://moneymoon.app/?activate={0}&user={1}", user.activation_key, user.id);
                         Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key, url));
                     } else
                     {

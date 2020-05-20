@@ -68,7 +68,8 @@ namespace API.Controllers
                         user.referrer = referal.id;
                     }
                     await _userContext.AddItemAsync(user);
-                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
+                    var url = string.Format("https://moneymoon.app/?activate={0}", user.activation_key);
+                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key, url));
                     return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
                 }
             }
@@ -85,7 +86,8 @@ namespace API.Controllers
 
                 if (user != null && user.ContainsSessionToken(activation.user_token) && !user.is_active)
                 {
-                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
+                    var url = string.Format("https://moneymoon.app/?activate={0}", user.activation_key);
+                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key, url));
                     return Ok(new ResponseModel() { status = InfoStatus.Info, text = "email_sent" });
                 }
             }
@@ -138,7 +140,8 @@ namespace API.Controllers
                     await _userContext.UpdateItemAsync(user.id, user);
                     if (!user.is_active)
                     {
-                        Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
+                        var url = string.Format("https://moneymoon.app/?activate={0}", user.activation_key);
+                        Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key, url));
                     } else
                     {
                         Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_account_updated"), Language.Translate(user.language, "content_account_updated"));

@@ -10,7 +10,7 @@ namespace API.Utility
             SystemLanguage.German, new Dictionary<string, string>() {
                 { "translate_not_found", "Übersetzung für den Wert {0} nicht gefunden!" },
                 { "title_finish_registration", "Registrierung für Money Moon abschließen" },
-                { "content_finish_registration", "Dein Code für das aktivieren deines Accounts: {0}" },
+                { "content_finish_registration", "Dein Code für das aktivieren deines Accounts: {0}\nZur Aktivierung über den Browser besuche: {1}" },
                 { "title_account_updated", "Dein Money Moon Account wurde aktualisiert." },
                 { "content_account_updated", "Wenn du diese Änderungen nicht autorisiert hast, wende dich bitte schnellstmöglich an den Support." },
                 { "title_successfull_activation", "Registrierung erfolgreich abgeschlossen!" },
@@ -23,7 +23,7 @@ namespace API.Utility
             SystemLanguage.English, new Dictionary<string, string>() {
                 { "translate_not_found", "Translation for the key {0} not found!" },
                 { "title_finish_registration", "Finish your registration for Money Moon" },
-                { "content_finish_registration", "Your activation key for money moon: {0}" },
+                { "content_finish_registration", "Your activation key for money moon: {0}\nTo activate your account via browser visit: {1}" },
                 { "title_account_updated", "Your Money Moon Account was updated." },
                 { "content_account_updated", "If it wasn't you, pleace contact the support ASAP!" },
                 { "title_successfull_activation", "Successfully activated your Money Moon Account!" },

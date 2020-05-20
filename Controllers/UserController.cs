@@ -68,7 +68,7 @@ namespace API.Controllers
                         user.referrer = referal.id;
                     }
                     await _userContext.AddItemAsync(user);
-                    //Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
+                    Mailer.CreateMessage(user.email, Language.Translate(user.language, "title_finish_registration"), string.Format(Language.Translate(user.language, "content_finish_registration"), user.activation_key));
                     return Ok(UserModel.FromEntity(user, session.token, InfoStatus.Info));
                 }
             }

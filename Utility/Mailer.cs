@@ -5,8 +5,8 @@ namespace API.Utility
 {
     public static class Mailer
     {
-        private const string FROM = "hitziger.fabian@live.de";
-        private const string SERVER = "SMTP.office365.com";
+        private const string FROM = "support@moneymoon.app";
+        private const string SERVER = "smtp.ionos.de";
         private const int PORT = 587;
         private const string METHOD = "STARTTLS";
 
@@ -16,7 +16,7 @@ namespace API.Utility
             SmtpClient client = new SmtpClient(SERVER, PORT);
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential("hitziger.fabian@live.de", "Fabi!Alina?");
+            client.Credentials = new NetworkCredential(FROM, "Sup3rG3h31m!");
             client.Send(message);
             client.Dispose();
         }

@@ -1,5 +1,4 @@
 using API.Models;
-using API.Models.UserModels;
 using API.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -14,7 +13,6 @@ namespace API
 {
     public class Startup
     {
-        private const string corsPolicy = "_specifiedOrigins";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -47,10 +45,10 @@ namespace API
             //services.AddDbContext<DatabaseEntitiesContext>(options => options.UseCosmos("https://money-moon-db-server.documents.azure.com:443/",
                                        // "jkIbnlwNqaxKzpYhIz0zbIMVWxHHi8CVMoktKNWSQaZqnzAVEYaq0sO3r2do9QKMiQHCHl9S5u2qz9Y9XeI1qA==",
                                        // databaseName: "MoneyMoonDb"));
-            services.AddSingleton(InitializeCosmosClientInstanceAsync<UserTaskEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
-            services.AddSingleton(InitializeCosmosClientInstanceAsync<UserEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
-            services.AddSingleton(InitializeCosmosClientInstanceAsync<StakeEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
-            services.AddSingleton(InitializeCosmosClientInstanceAsync<LeadEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            //services.AddSingleton(InitializeCosmosClientInstanceAsync<UserTaskEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            //services.AddSingleton(InitializeCosmosClientInstanceAsync<UserEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            //services.AddSingleton(InitializeCosmosClientInstanceAsync<StakeEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
+            //services.AddSingleton(InitializeCosmosClientInstanceAsync<LeadEntity>(Configuration.GetSection("CosmosDb")).GetAwaiter().GetResult());
             services.AddControllers();
         }
 

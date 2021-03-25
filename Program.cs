@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
+using WebSocketSharp;
 
 namespace API
 {
@@ -7,6 +8,16 @@ namespace API
     {
         public static void Main(string[] args)
         {
+            using (var ws = new WebSocket("ws://localhost/user"))
+            {
+                ws.OnMessage += (sender, e) =>
+                {
+                    ws.Close();
+                };
+
+                ws.Connect();
+                ws.Send("BALUS");
+            }
             CreateHostBuilder(args).Build().Run();
         }
 

@@ -8,7 +8,7 @@ namespace API
     {
         public static void Main(string[] args)
         {
-            using (var ws = new WebSocket("ws://localhost/user"))
+            using (var ws = new WebSocket("ws://localhost:4200/user"))
             {
                 ws.OnMessage += (sender, e) =>
                 {

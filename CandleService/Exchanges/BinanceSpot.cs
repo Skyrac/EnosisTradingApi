@@ -17,7 +17,6 @@ namespace CandleService.Exchanges
         private readonly string _secret = "cDgmpQiRZxNHdvFVG7mbDxSytIO6MPogZOKFa90rIwNpdFBHZdhuBtnY04G2X8YH";
         private BinanceClient client;
         private BinanceSocketClient socketClient;
-        private string streamKey;
         private bool finishedSetup = false;
 
         private Dictionary<string, object> _candles = new Dictionary<string, object>();
@@ -37,7 +36,6 @@ namespace CandleService.Exchanges
                     Thread.Sleep(5000);
                 }
             } while (!stream.Success);
-            streamKey = stream.Data;
             socketClient = new BinanceSocketClient();
             _ = SubscribeSymbols();
         }
@@ -119,7 +117,7 @@ namespace CandleService.Exchanges
             var data = request.Data;
             foreach (var price in data)
             {
-                if((price.Symbol.Contains("UP") || price.Symbol.Contains("DOWN") || symbols.Contains("BEAR") || symbols.Contains("BULL")) || (!price.Symbol.Contains("usdt", StringComparison.OrdinalIgnoreCase) && !price.Symbol.Contains("btc", StringComparison.OrdinalIgnoreCase) && !price.Symbol.Contains("eth", StringComparison.OrdinalIgnoreCase)))
+                if(!price.Symbol.Contains("UP") && !price.Symbol.Contains("DOWN") && !symbols.Contains("BEAR") && !symbols.Contains("BULL") && (price.Symbol.Contains("usdt", StringComparison.OrdinalIgnoreCase) || price.Symbol.Contains("btc", StringComparison.OrdinalIgnoreCase) || price.Symbol.Contains("eth", StringComparison.OrdinalIgnoreCase)))
                     symbols.Add(price.Symbol);
             }
             return symbols.ToArray();

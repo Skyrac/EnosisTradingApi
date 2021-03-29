@@ -9,16 +9,16 @@ namespace CandleService
 {
     public class Program
     {
-        private static WebSocketServer _server;
+        public static WebSocketServer Server;
         public static Dictionary<EExchange, BaseExchange> Exchanges = new Dictionary<EExchange, BaseExchange>();
         static void Main(string[] args)
         {
             Exchanges.Add(EExchange.BinanceSpot, new BinanceExchange(EExchange.BinanceSpot));
             Exchanges.Add(EExchange.BinanceFuturesUsdt, new BinanceExchange(EExchange.BinanceFuturesUsdt));
 
-            _server = new WebSocketServer("ws://localhost:4300");
-            _server.AddWebSocketService<Subscriber>("/subscribe");
-            _server.Start();
+            Server = new WebSocketServer("ws://localhost:4300");
+            Server.AddWebSocketService<Subscriber>("/subscribe");
+            Server.Start();
             Console.ReadKey();
         }
     }

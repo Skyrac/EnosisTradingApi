@@ -5,6 +5,7 @@ using Binance.Net.Objects.Spot;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Objects;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
@@ -103,11 +104,11 @@ namespace CandleService.Exchanges
         {
             if(!_candles.ContainsKey(interval))
             {
-                _candles.Add(interval, new Dictionary<string, KeyValuePair<Kline, bool>>());
+                _candles.TryAdd(interval, new ConcurrentDictionary<string, KeyValuePair<Kline, bool>>());
             }
             if(!_candles[interval].ContainsKey(obj.Symbol))
             {
-                _candles[interval].Add(obj.Symbol, new KeyValuePair<Kline, bool>(new Kline(obj.Data), true));
+                _candles[interval].TryAdd(obj.Symbol, new KeyValuePair<Kline, bool>(new Kline(obj.Data), true));
             } else
             {
                 _candles[interval][obj.Symbol] = new KeyValuePair<Kline, bool>(new Kline(obj.Data), true);
@@ -118,7 +119,7 @@ namespace CandleService.Exchanges
             }
         }
 
-        public string[] GetSymbols()
+        protected override string[] GetSymbols()
         {
 
             WebCallResult<IEnumerable<Binance.Net.Objects.Spot.MarketData.BinanceBookPrice>> request = null;

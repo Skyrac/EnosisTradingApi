@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
 using System.Threading;
+using System.Diagnostics;
+using Newtonsoft.Json;
+using System.Collections.Concurrent;
 
 namespace CandleService.Exchanges
 {
@@ -14,13 +17,16 @@ namespace CandleService.Exchanges
         protected EExchange _exchange;
 
         protected Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>> _listeners = new Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>>();
-        protected Dictionary<KlineInterval, Dictionary<string, KeyValuePair<Kline, bool>>> _candles = new Dictionary<KlineInterval, Dictionary<string, KeyValuePair<Kline, bool>>>();
+        protected ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, KeyValuePair<Kline, bool>>> _candles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, KeyValuePair<Kline, bool>>>();
+        private List<Subscriber> _subscribers = new List<Subscriber>();
         private Timer timer;
         public BaseExchange(EExchange exchange)
         {
             _exchange = exchange;
             timer = new Timer((_) => Publish(), null, 0, 1000);
         }
+
+        protected abstract string[] GetSymbols();
 
         private bool AddListener(string symbol, KlineInterval interval, Subscriber subscriber)
         {
@@ -48,7 +54,15 @@ namespace CandleService.Exchanges
 
         public void AddListener(string[] symbols, KlineInterval interval, Subscriber subscriber)
         {
+            if (!_subscribers.Contains(subscriber))
+            {
+                _subscribers.Add(subscriber);
+            }
             var subscriptionSymbols = new List<string>();
+            if(symbols == null || symbols.Length == 0)
+            {
+                symbols = GetSymbols();
+            }
             foreach (var symbol in symbols)
             {
                 Console.WriteLine("Adding Listener on {0} - {1}", symbol, interval);
@@ -98,28 +112,45 @@ namespace CandleService.Exchanges
                 return;
             }
             var _dirtyCandles = new Dictionary<KlineInterval, Dictionary<string, Kline>>();
-            foreach(var interval in _candles.Keys)
+            var availableCandles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, KeyValuePair<Kline, bool>>>(_candles);
+            var watch = new Stopwatch();
+            watch.Start();
+            foreach(var interval in availableCandles.Keys)
             {
-                foreach(var symbol in _candles[interval].Keys)
+                foreach (var symbol in availableCandles[interval].Keys)
                 {
-                    if (_candles[interval][symbol].Value)
+                    if (availableCandles[interval] != null && availableCandles[interval].ContainsKey(symbol) && availableCandles[interval][symbol].Value)
                     {
-                        Console.WriteLine("{0}: {1} - {2} is Dirty", _exchange, symbol, interval);
+                        if(!_listeners.ContainsKey(symbol) || !_listeners[symbol].ContainsKey(interval))
+                        {
+                            continue;
+                        }
                         if(!_dirtyCandles.ContainsKey(interval))
                         {
                             _dirtyCandles.Add(interval, new Dictionary<string, Kline>());
                         }
                         if(!_dirtyCandles[interval].ContainsKey(symbol))
                         {
-                            _dirtyCandles[interval].Add(symbol, _candles[interval][symbol].Key);
+                            _dirtyCandles[interval].Add(symbol, availableCandles[interval][symbol].Key);
                         }
                     }
                 }
             }
+            var message = JsonConvert.SerializeObject(_dirtyCandles);
+            foreach(var subscriber in _subscribers)
+            {
+                subscriber.Context.WebSocket.Send(message);
+            }
+            Console.WriteLine("{0}: Needed {1} seconds to publish dirty candles", _exchange, watch.ElapsedMilliseconds / 1000);
+            watch.Stop();
         }
 
         public void Unsubscribe(Subscriber subscriber)
         {
+            if (_subscribers.Contains(subscriber))
+            {
+                _subscribers.Remove(subscriber);
+            }
             var unsubscriptionSymbols = new Dictionary<KlineInterval, List<string>>();
             foreach(var symbolLayer in _listeners)
             {

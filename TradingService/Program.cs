@@ -22,7 +22,7 @@ namespace TradingService
                 };
 
                 ws.Connect();
-                ws.Send(JsonConvert.SerializeObject(new CandleServiceSubscriptionMessage(EExchange.BinanceSpot, Binance.Net.Enums.KlineInterval.OneMinute, "BTCUSDT", "ETHUSDT")));
+                ws.Send(JsonConvert.SerializeObject(new CandleServiceSubscriptionMessage(EExchange.BinanceSpot, Binance.Net.Enums.KlineInterval.OneMinute)));
                 Console.ReadKey();
             }
         }

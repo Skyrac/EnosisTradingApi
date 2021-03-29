@@ -9,6 +9,7 @@ using System.Threading;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using Utils.Messages.Models;
 
 namespace CandleService.Exchanges
 {
@@ -17,7 +18,7 @@ namespace CandleService.Exchanges
         protected EExchange _exchange;
 
         protected Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>> _listeners = new Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>>();
-        protected ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, KeyValuePair<Kline, bool>>> _candles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, KeyValuePair<Kline, bool>>>();
+        protected ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> _candles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>>();
         private List<Subscriber> _subscribers = new List<Subscriber>();
         private Timer timer;
         public BaseExchange(EExchange exchange)
@@ -107,41 +108,42 @@ namespace CandleService.Exchanges
 
         public virtual void Publish()
         {
-            if(_candles == null || _candles.Count == 0)
+            if(_candles == null || _candles.Count == 0 || _subscribers.Count == 0)
             {
                 return;
             }
-            var _dirtyCandles = new Dictionary<KlineInterval, Dictionary<string, Kline>>();
-            var availableCandles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, KeyValuePair<Kline, bool>>>(_candles);
+            var _wrappedIntervals = new List<WrappedIntervalCandles>();
+            var availableCandles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>>(_candles);
             var watch = new Stopwatch();
             watch.Start();
+            var index = 0;
+            var items = 0;
             foreach(var interval in availableCandles.Keys)
             {
+                _wrappedIntervals.Add(new WrappedIntervalCandles(interval));
                 foreach (var symbol in availableCandles[interval].Keys)
                 {
-                    if (availableCandles[interval] != null && availableCandles[interval].ContainsKey(symbol) && availableCandles[interval][symbol].Value)
+                    if (availableCandles[interval] != null && availableCandles[interval].ContainsKey(symbol) && availableCandles[interval][symbol].Dirty)
                     {
                         if(!_listeners.ContainsKey(symbol) || !_listeners[symbol].ContainsKey(interval))
                         {
                             continue;
                         }
-                        if(!_dirtyCandles.ContainsKey(interval))
-                        {
-                            _dirtyCandles.Add(interval, new Dictionary<string, Kline>());
-                        }
-                        if(!_dirtyCandles[interval].ContainsKey(symbol))
-                        {
-                            _dirtyCandles[interval].Add(symbol, availableCandles[interval][symbol].Key);
-                        }
+                        var kline = _candles[interval][symbol];
+                        kline.Dirty = false;
+                        _wrappedIntervals[index].Candles.Add(new WrappedSymbolCandle(symbol, new Kline(kline)));
+                        items++;
                     }
                 }
+
+                index++;
             }
-            var message = JsonConvert.SerializeObject(_dirtyCandles);
+            var message = JsonConvert.SerializeObject(new CandleServiceUpdateMessage(_exchange, _wrappedIntervals));
             foreach(var subscriber in _subscribers)
             {
                 subscriber.Context.WebSocket.Send(message);
             }
-            Console.WriteLine("{0}: Needed {1} seconds to publish dirty candles", _exchange, watch.ElapsedMilliseconds / 1000);
+            Console.WriteLine("{0}: Needed {1} seconds to publish {2} dirty candles", _exchange, watch.ElapsedMilliseconds / 1000, items);
             watch.Stop();
         }
 

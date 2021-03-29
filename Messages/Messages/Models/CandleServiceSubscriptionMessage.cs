@@ -11,7 +11,7 @@ namespace Utils.Messages.Models
         public EExchange Exchange { get; set; }
         public string[] Symbols { get; set; }
         [JsonConstructor]
-        private CandleServiceSubscriptionMessage() : base(EMessage.Subscription) { }
+        private CandleServiceSubscriptionMessage() : base(EMessage.CandleServiceSubscription) { }
 
         public CandleServiceSubscriptionMessage(EExchange exchange, KlineInterval interval, params string[] symbols) : this()
         {

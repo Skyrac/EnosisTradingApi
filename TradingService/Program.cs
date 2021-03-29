@@ -14,7 +14,19 @@ namespace TradingService
             {
                 ws.OnMessage += (sender, e) =>
                 {
-                    Console.WriteLine(e.Data);
+                    if(e.IsText && e.Data.Length > 0)
+                    {
+                        var data = JsonConvert.DeserializeObject<CandleServiceUpdateMessage>(e.Data);
+                        if(data == null || data.IntervalCandles.Count == 0)
+                        {
+                            return;
+                        }
+                        Console.WriteLine("Recieved Intervals: {0}", data.IntervalCandles.Count);
+                        foreach(var intervalCandle in data.IntervalCandles)
+                        {
+                            Console.WriteLine("Interval {0} got {1} candles", intervalCandle.Interval, intervalCandle.Candles.Count);
+                        }
+                    }
                 };
                 ws.OnClose += (sender, e) =>
                 {

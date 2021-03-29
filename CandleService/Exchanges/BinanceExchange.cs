@@ -104,14 +104,14 @@ namespace CandleService.Exchanges
         {
             if(!_candles.ContainsKey(interval))
             {
-                _candles.TryAdd(interval, new ConcurrentDictionary<string, KeyValuePair<Kline, bool>>());
+                _candles.TryAdd(interval, new ConcurrentDictionary<string, Kline>());
             }
             if(!_candles[interval].ContainsKey(obj.Symbol))
             {
-                _candles[interval].TryAdd(obj.Symbol, new KeyValuePair<Kline, bool>(new Kline(obj.Data), true));
+                _candles[interval].TryAdd(obj.Symbol, new Kline(obj.Data) { Dirty = true });
             } else
             {
-                _candles[interval][obj.Symbol] = new KeyValuePair<Kline, bool>(new Kline(obj.Data), true);
+                _candles[interval][obj.Symbol] = new Kline(obj.Data) { Dirty = true };
             }
             if (obj.Data.Final && finishedSetup)
             {

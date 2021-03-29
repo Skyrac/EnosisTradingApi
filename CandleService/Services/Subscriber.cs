@@ -34,7 +34,7 @@ namespace CandleService.Services
             Console.WriteLine("Recieved Message of Type {0}", type);
             switch(type)
             {
-                case EMessage.Subscription:
+                case EMessage.CandleServiceSubscription:
                     SubscriptionHandler.HandleMessage(JsonConvert.DeserializeObject<CandleServiceSubscriptionMessage>(data), this);
                     break;
             }

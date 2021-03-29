@@ -1,4 +1,5 @@
 ﻿using Binance.Net.Interfaces;
+using Newtonsoft.Json;
 using Skender.Stock.Indicators;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,9 @@ namespace Utils.Candles.Models
             get; set;
         }
 
-        public Dictionary<string, ResultBase> Indicators { get; set; } = new Dictionary<string, ResultBase>();
+        [JsonIgnore]
+        public bool Dirty { get; set; } = false;
+        //public Dictionary<string, ResultBase> Indicators { get; set; } = new Dictionary<string, ResultBase>();
 
         public Kline() { }
 
@@ -48,15 +51,15 @@ namespace Utils.Candles.Models
             this.Volume = kline.Volume;
             this.CloseTime = kline.CloseTime;
         }
-        public T GetIndicator<T>(string indicator) where T : ResultBase
-        {
-            if (Indicators.ContainsKey(indicator) && Indicators[indicator].GetType() == typeof(T))
-            {
-                return (T)Indicators[indicator];
-            }
+        //public T GetIndicator<T>(string indicator) where T : ResultBase
+        //{
+        //    if (Indicators.ContainsKey(indicator) && Indicators[indicator].GetType() == typeof(T))
+        //    {
+        //        return (T)Indicators[indicator];
+        //    }
 
-            return null;
-        }
+        //    return null;
+        //}
 
         public void Update(IBinanceKline kline)
         {

@@ -2,15 +2,15 @@
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
 using Binance.Net.Objects.Spot;
-using CandleService.Services;
 using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Objects;
-using Messages.Enums;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Utils.Candles.Models;
+using Utils.Enums;
 
 namespace CandleService.Exchanges
 {
@@ -21,8 +21,6 @@ namespace CandleService.Exchanges
         private BinanceClient client;
         private BinanceSocketClient socketClient;
         private bool finishedSetup = false;
-
-        private Dictionary<string, object> _candles = new Dictionary<string, object>();
         public BinanceExchange(EExchange exchangeType) : base(exchangeType)
         {
             client = new BinanceClient(new BinanceClientOptions
@@ -103,9 +101,16 @@ namespace CandleService.Exchanges
         int counter = 0;
         private void RecieveCandleUpdate(KlineInterval interval, IBinanceStreamKlineData obj)
         {
-            if(!_candles.ContainsKey(obj.Symbol))
+            if(!_candles.ContainsKey(interval))
             {
-                _candles.Add(obj.Symbol, obj.Data);
+                _candles.Add(interval, new Dictionary<string, KeyValuePair<Kline, bool>>());
+            }
+            if(!_candles[interval].ContainsKey(obj.Symbol))
+            {
+                _candles[interval].Add(obj.Symbol, new KeyValuePair<Kline, bool>(new Kline(obj.Data), true));
+            } else
+            {
+                _candles[interval][obj.Symbol] = new KeyValuePair<Kline, bool>(new Kline(obj.Data), true);
             }
             if (obj.Data.Final && finishedSetup)
             {

@@ -1,7 +1,7 @@
 ﻿using CandleService.Utils.MessageHandler;
-using Messages;
-using Messages.Enums;
-using Messages.Models;
+using Utils;
+using Utils.Messages.Enums;
+using Utils.Messages.Models;
 using Newtonsoft.Json;
 using System;
 using WebSocketSharp;

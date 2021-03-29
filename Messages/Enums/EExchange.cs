@@ -1,4 +1,4 @@
-﻿namespace Messages.Enums
+﻿namespace Utils.Enums
 {
     public enum EExchange
     {

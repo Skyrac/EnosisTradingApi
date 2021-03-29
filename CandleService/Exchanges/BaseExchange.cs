@@ -1,10 +1,11 @@
 ﻿using Binance.Net.Enums;
 using CandleService.Services;
-using Messages.Enums;
+using Utils.Enums;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using Utils.Candles.Models;
+using System.Threading;
 
 namespace CandleService.Exchanges
 {
@@ -13,9 +14,12 @@ namespace CandleService.Exchanges
         protected EExchange _exchange;
 
         protected Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>> _listeners = new Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>>();
+        protected Dictionary<KlineInterval, Dictionary<string, KeyValuePair<Kline, bool>>> _candles = new Dictionary<KlineInterval, Dictionary<string, KeyValuePair<Kline, bool>>>();
+        private Timer timer;
         public BaseExchange(EExchange exchange)
         {
             _exchange = exchange;
+            timer = new Timer((_) => Publish(), null, 0, 1000);
         }
 
         private bool AddListener(string symbol, KlineInterval interval, Subscriber subscriber)
@@ -85,6 +89,33 @@ namespace CandleService.Exchanges
                 }
             }
             return false;
+        }
+
+        public virtual void Publish()
+        {
+            if(_candles == null || _candles.Count == 0)
+            {
+                return;
+            }
+            var _dirtyCandles = new Dictionary<KlineInterval, Dictionary<string, Kline>>();
+            foreach(var interval in _candles.Keys)
+            {
+                foreach(var symbol in _candles[interval].Keys)
+                {
+                    if (_candles[interval][symbol].Value)
+                    {
+                        Console.WriteLine("{0}: {1} - {2} is Dirty", _exchange, symbol, interval);
+                        if(!_dirtyCandles.ContainsKey(interval))
+                        {
+                            _dirtyCandles.Add(interval, new Dictionary<string, Kline>());
+                        }
+                        if(!_dirtyCandles[interval].ContainsKey(symbol))
+                        {
+                            _dirtyCandles[interval].Add(symbol, _candles[interval][symbol].Key);
+                        }
+                    }
+                }
+            }
         }
 
         public void Unsubscribe(Subscriber subscriber)

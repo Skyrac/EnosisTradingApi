@@ -1,6 +1,6 @@
 ﻿using CandleService.Exchanges;
 using CandleService.Services;
-using Messages.Enums;
+using Utils.Enums;
 using System;
 using System.Collections.Generic;
 using WebSocketSharp.Server;

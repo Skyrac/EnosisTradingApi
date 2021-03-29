@@ -6,6 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="Binance.Net" Version="6.12.0" />
+    <PackageReference Include="Skender.Stock.Indicators" Version="1.10.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Candles\Enums\" />
   </ItemGroup>
 
 </Project>

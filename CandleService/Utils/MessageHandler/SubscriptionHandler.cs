@@ -1,6 +1,6 @@
 ﻿using CandleService.Services;
-using Messages.Models;
 using System;
+using Utils.Messages.Models;
 
 namespace CandleService.Utils.MessageHandler
 {

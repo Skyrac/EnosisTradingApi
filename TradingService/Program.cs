@@ -1,7 +1,7 @@
-﻿using Messages.Enums;
-using Messages.Models;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
+using Utils.Enums;
+using Utils.Messages.Models;
 using WebSocketSharp;
 
 namespace TradingService

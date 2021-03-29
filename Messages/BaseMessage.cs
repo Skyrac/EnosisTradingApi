@@ -1,7 +1,7 @@
-﻿using Messages.Enums;
+﻿using Utils.Messages.Enums;
 using Newtonsoft.Json;
 
-namespace Messages
+namespace Utils
 {
     public class BaseMessage
     {

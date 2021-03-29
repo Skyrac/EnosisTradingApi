@@ -1,8 +1,9 @@
 ﻿using Binance.Net.Enums;
-using Messages.Enums;
 using Newtonsoft.Json;
+using Utils.Enums;
+using Utils.Messages.Enums;
 
-namespace Messages.Models
+namespace Utils.Messages.Models
 {
     public class CandleServiceSubscriptionMessage : BaseMessage
     {

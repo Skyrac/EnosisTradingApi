@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TradingService", "TradingSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UserService", "UserService\UserService.csproj", "{955628F6-13CE-4661-8C3E-67BD8349880E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CandleService", "CandleService\CandleService.csproj", "{2C85881B-2750-4D13-9A29-02F238E06F3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CandleService", "CandleService\CandleService.csproj", "{2C85881B-2750-4D13-9A29-02F238E06F3F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "Messages\Messages.csproj", "{4992EEDC-1878-4745-927D-ECBB9B14A40A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{2C85881B-2750-4D13-9A29-02F238E06F3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2C85881B-2750-4D13-9A29-02F238E06F3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2C85881B-2750-4D13-9A29-02F238E06F3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4992EEDC-1878-4745-927D-ECBB9B14A40A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4992EEDC-1878-4745-927D-ECBB9B14A40A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4992EEDC-1878-4745-927D-ECBB9B14A40A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4992EEDC-1878-4745-927D-ECBB9B14A40A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

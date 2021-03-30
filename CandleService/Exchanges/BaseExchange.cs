@@ -1,14 +1,14 @@
 ﻿using Binance.Net.Enums;
 using CandleService.Services;
-using Utils.Enums;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
-using System.Threading;
-using System.Diagnostics;
-using Newtonsoft.Json;
-using System.Collections.Concurrent;
+using Utils.Enums;
 using Utils.Messages.Models;
 
 namespace CandleService.Exchanges
@@ -20,11 +20,11 @@ namespace CandleService.Exchanges
         protected Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>> _listeners = new Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>>();
         protected ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> _candles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>>();
         private List<Subscriber> _subscribers = new List<Subscriber>();
-        private Timer timer;
+        private Timer _timer;
         public BaseExchange(EExchange exchange)
         {
             _exchange = exchange;
-            timer = new Timer((_) => Publish(), null, 0, 1000);
+            _timer = new Timer((_) => Publish(), null, 0, 1000);
         }
 
         protected abstract string[] GetSymbols();

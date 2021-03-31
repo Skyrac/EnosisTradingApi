@@ -12,22 +12,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
 using Utils.Enums;
-
+using Utils.Clients;
 namespace CandleService.Exchanges
 {
     public class BinanceExchange : BaseExchange
     {
-        private readonly string _key = "vBEZXTHGHLprYlxAvplvkEdIKJmc7pECA5CNO6pgWLQnxyMPOOoZ0Ccz2rWn6irn";
-        private readonly string _secret = "cDgmpQiRZxNHdvFVG7mbDxSytIO6MPogZOKFa90rIwNpdFBHZdhuBtnY04G2X8YH";
         private BinanceClient client;
         private BinanceSocketClient socketClient;
         private bool finishedSetup = false;
         public BinanceExchange(EExchange exchangeType) : base(exchangeType)
         {
-            client = new BinanceClient(new BinanceClientOptions
-            {
-                ApiCredentials = new ApiCredentials(_key, _secret)
-            });
+            client = new BinanceBaseClient().Client;
             WebCallResult<string> stream;
             do
             {

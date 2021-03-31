@@ -13,6 +13,10 @@ namespace Utils.Strategies.Models
 
         public Condition AddCondition(Condition node)
         {
+            if(Conditions == null)
+            {
+                Conditions = new List<Condition>();
+            }
             if (!Conditions.Contains(node))
             {
                 Conditions.Add(node);
@@ -22,14 +26,14 @@ namespace Utils.Strategies.Models
 
         public Condition RemoveCondition(Condition node)
         {
-            if(Conditions.Contains(node))
+            if(Conditions != null && Conditions.Contains(node))
             {
                 Conditions.Remove(node);
             }
             return node;
         }
 
-        public override bool IsTrue(ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, ConcurrentDictionary<DateTime, Kline>>> candles)
+        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
         {
             return Conditions.Any(item => !item.IsTrue(candles));
         }

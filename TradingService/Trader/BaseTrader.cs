@@ -73,9 +73,31 @@ namespace TradingService.Trader
                     Console.WriteLine("Recieved History Candles for {0} intervals", historyCandles.Candles.Count);
                     foreach (var intervalCandle in historyCandles.Candles)
                     {
+                        if(!_candles.ContainsKey(intervalCandle.Interval))
+                        {
+                            _candles.Add(intervalCandle.Interval, new Dictionary<string, Dictionary<DateTime, Kline>>());
+                        }
                         foreach (var symbolCandle in intervalCandle.Symbols)
                         {
+                            if(!_candles[intervalCandle.Interval].ContainsKey(symbolCandle.Symbol))
+                            {
+                                _candles[intervalCandle.Interval].Add(symbolCandle.Symbol, new Dictionary<DateTime, Kline>());
+                            }
+                            foreach(var kline in symbolCandle.Klines)
+                            {
+                                if(!_candles[intervalCandle.Interval][symbolCandle.Symbol].ContainsKey(kline.Date))
+                                {
+                                    _candles[intervalCandle.Interval][symbolCandle.Symbol].Add(kline.Date, kline);
+                                }
+                            }
                             Console.WriteLine("Recieved {0} Candles for {1} - {2}", symbolCandle.Klines.Count, symbolCandle.Symbol, intervalCandle.Interval);
+                        }
+                    }
+                    if(_strategies != null)
+                    {
+                        foreach(var strategy in _strategies)
+                        {
+                            strategy.Value.SetupIndicators(_candles);
                         }
                     }
                     break;
@@ -93,18 +115,26 @@ namespace TradingService.Trader
                 return;
             }
             _strategies.Add(key, strategy);
-            foreach (var wrappedInterval in strategy.RequiredIntervalSymbols)
+            var wrappedIntervalSymbols = new List<WrappedIntervalCandles>();
+            foreach(var interval in strategy.GetRequiredIntervalCandles())
             {
-                foreach(var wrappedSymbol in wrappedInterval.Candles)
-                if(!_requiredCandlesPerSymbol.ContainsKey(wrappedSymbol.Symbol))
+                var wrappedSymbols = new List<WrappedSymbolCandle>();
+                foreach(var symbol in interval.Value)
                 {
-                    _requiredCandlesPerSymbol.Add(wrappedSymbol.Symbol, strategy.RequiredCandles);
-                } else
-                {
-                    _requiredCandlesPerSymbol[wrappedSymbol.Symbol] = Math.Max(strategy.RequiredCandles, _requiredCandlesPerSymbol[wrappedSymbol.Symbol]);
+                    if (!_requiredCandlesPerSymbol.ContainsKey(symbol))
+                    {
+                        _requiredCandlesPerSymbol.Add(symbol, strategy.RequiredCandles);
+                    }
+                    else
+                    {
+                        _requiredCandlesPerSymbol[symbol] = Math.Max(strategy.RequiredCandles, _requiredCandlesPerSymbol[symbol]);
+                    }
+                    wrappedSymbols.Add(new WrappedSymbolCandle(symbol, null));
                 }
+
+                wrappedIntervalSymbols.Add(new WrappedIntervalCandles(interval.Key, wrappedSymbols));
             }
-            _socket.Send(JsonConvert.SerializeObject(new CandleServiceSubscriptionMessage(EExchange.BinanceSpot, strategy.RequiredCandles, strategy.RequiredIntervalSymbols.ToArray())));
+            _socket.Send(JsonConvert.SerializeObject(new CandleServiceSubscriptionMessage(EExchange.BinanceSpot, strategy.RequiredCandles, wrappedIntervalSymbols.ToArray())));
         }
 
 

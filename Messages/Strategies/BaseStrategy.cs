@@ -1,5 +1,8 @@
 ﻿using Binance.Net.Enums;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using Utils.Candles.Models;
 using Utils.Strategies.Models;
 using Utils.Trading;
@@ -12,10 +15,22 @@ namespace Utils.Strategies
         public ConditionSequence LongCondition { get; set; }
         public ConditionSequence ShortCondition { get; set; }
 
-        public void FillIndicators()
+        public List<ConditionItem> GetConditionItems()
         {
-            
+            var conditionItems = new List<ConditionItem>();
+            if (LongCondition != null)
+            {
+                conditionItems.AddRange(LongCondition.GetRequiredConditionItems());
+            }
+
+            if (ShortCondition != null)
+            {
+                conditionItems.AddRange(ShortCondition.GetRequiredConditionItems());
+            }
+            return conditionItems;
         }
+
+
 
         public virtual CloseReason CloseLong(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)
         {

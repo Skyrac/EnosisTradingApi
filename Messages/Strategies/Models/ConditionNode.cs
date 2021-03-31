@@ -12,7 +12,7 @@ namespace Utils.Strategies.Models
         public ConditionItem FirstItem { get; set; }
         public BoolOperator Operator { get; set; }
         public ConditionItem SecondItem { get; set; }
-        public override bool IsTrue(ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, ConcurrentDictionary<DateTime, Kline>>> candles)
+        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
         {
             switch (Operator)
             {

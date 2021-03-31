@@ -8,7 +8,7 @@ namespace Utils.Strategies.Models
 {
     public abstract class Condition
     {
-        public abstract bool IsTrue(ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, ConcurrentDictionary<DateTime, Kline>>> candles);
+        public abstract bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles);
         public abstract List<ConditionItem> GetConditionItems();
     }
 }

@@ -33,9 +33,9 @@ namespace Utils.Strategies.Models
             return node;
         }
 
-        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
+        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
-            return Conditions.Any(item => !item.IsTrue(candles));
+            return Conditions.Any(item => !item.IsTrue(candles, index));
         }
 
         public List<ConditionItem> GetRequiredConditionItems()

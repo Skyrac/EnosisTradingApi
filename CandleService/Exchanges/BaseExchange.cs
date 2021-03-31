@@ -9,7 +9,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
-using Utils.Clients.Enums;
 using Utils.Enums;
 using Utils.Messages.Models;
 
@@ -127,14 +126,14 @@ namespace CandleService.Exchanges
                 {
                     if (availableCandles[interval] != null && availableCandles[interval].ContainsKey(symbol) && availableCandles[interval][symbol].Dirty)
                     {
-                        if(!_listeners.ContainsKey(symbol) || !_listeners[symbol].ContainsKey(interval))
+                        var kline = _candles[interval][symbol];
+                        kline.Dirty = false;
+                        AddOrUpdateHistoryCandle(interval, symbol, kline, true);
+                        if (!_listeners.ContainsKey(symbol) || !_listeners[symbol].ContainsKey(interval))
                         {
                             continue;
                         }
-                        var kline = _candles[interval][symbol];
-                        kline.Dirty = false;
                         _wrappedIntervals[index].Candles.Add(new WrappedSymbolCandle(symbol, new Kline(kline)));
-                        AddOrUpdateHistoryCandle(interval, symbol, kline);
                         items++;
                     }
                 }
@@ -225,9 +224,10 @@ namespace CandleService.Exchanges
             {
                 AddOrUpdateHistoryCandle(interval, symbol, kline);
             }
+            OrderCandles(interval, symbol);
         }
 
-        private void AddOrUpdateHistoryCandle(KlineInterval interval, string symbol, Kline kline)
+        private void AddOrUpdateHistoryCandle(KlineInterval interval, string symbol, Kline kline, bool order = false)
         {
             if(_historyCandles == null) { return; }
             if (!_historyCandles.ContainsKey(interval))
@@ -247,6 +247,12 @@ namespace CandleService.Exchanges
             {
                 _historyCandles[interval][symbol][kline.Date].Update(kline);
             }
+            OrderCandles(interval, symbol);
+        }
+
+        private void OrderCandles(KlineInterval interval, string symbol)
+        {
+            _historyCandles[interval][symbol] = _historyCandles[interval][symbol].OrderBy(item => item.Key).ToDictionary(keyItem => keyItem.Key, valItem => valItem.Value);
         }
 
         protected abstract Task<IEnumerable<Kline>> RequestKlines(string symbol, KlineInterval interval, int? candles, DateTime? start, DateTime? end);

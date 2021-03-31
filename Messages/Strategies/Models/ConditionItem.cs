@@ -1,7 +1,6 @@
 ﻿using Binance.Net.Enums;
 using Skender.Stock.Indicators;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -18,17 +17,22 @@ namespace Utils.Strategies.Models
         public IndicatorProperties Indicator { get; set; } //Empty if candle.close etc.
         public int Index { get; set; }
         private PropertyInfo _info;
-        public decimal? GetValue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
+        public decimal? GetValue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
             if(!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol))
             {
                 return -1;
             }
             var klines = candles[Interval][Symbol].Values;
-            var index = klines.Count - 1 - Index;
+            index = index == -1 ? klines.Count - 1 - Index : index - Index;
             if (Indicator != null)
             {
                 var indicator = klines.ElementAt(index).GetIndicator<ResultBase>(Name);
+                if(indicator == null)
+                {
+                    GenerateIndicators(candles);
+                    indicator = klines.ElementAt(index).GetIndicator<ResultBase>(Name);
+                }
                 if(_info == null)
                 {
                     _info = indicator.GetType().GetProperty(Indicator.WantedProperty);
@@ -38,13 +42,13 @@ namespace Utils.Strategies.Models
             var candle = klines.ElementAt(index);
             if (_info == null)
             {
-                _info = candle.GetType().GetProperty(Indicator.WantedProperty);
+                _info = candle.GetType().GetProperty(Name);
             }
             return (decimal?)_info.GetValue(candle, null);
         }
         public void GenerateIndicators(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
         {
-            if(!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol))
+            if(!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol) || Indicator == null)
             {
                 return;
             }

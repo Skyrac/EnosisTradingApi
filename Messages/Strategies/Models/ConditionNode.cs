@@ -12,27 +12,27 @@ namespace Utils.Strategies.Models
         public ConditionItem FirstItem { get; set; }
         public BoolOperator Operator { get; set; }
         public ConditionItem SecondItem { get; set; }
-        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
+        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
             switch (Operator)
             {
                 case BoolOperator.GreaterOrEquals:
-                    return FirstItem.GetValue(candles) >= SecondItem.GetValue(candles);
+                    return FirstItem.GetValue(candles, index) >= SecondItem.GetValue(candles, index);
 
                 case BoolOperator.LowerOrEquals:
-                    return FirstItem.GetValue(candles) <= SecondItem.GetValue(candles);
+                    return FirstItem.GetValue(candles, index) <= SecondItem.GetValue(candles, index);
 
                 case BoolOperator.Equals:
-                    return FirstItem.GetValue(candles) == SecondItem.GetValue(candles);
+                    return FirstItem.GetValue(candles, index) == SecondItem.GetValue(candles, index);
 
                 case BoolOperator.Unlike:
-                    return FirstItem.GetValue(candles) != SecondItem.GetValue(candles);
+                    return FirstItem.GetValue(candles, index) != SecondItem.GetValue(candles, index);
 
                 case BoolOperator.GreaterThan:
-                    return FirstItem.GetValue(candles) > SecondItem.GetValue(candles);
+                    return FirstItem.GetValue(candles, index) > SecondItem.GetValue(candles, index);
 
                 case BoolOperator.LowerThan:
-                    return FirstItem.GetValue(candles) < SecondItem.GetValue(candles);
+                    return FirstItem.GetValue(candles, index) < SecondItem.GetValue(candles, index);
 
                 default:
                     return false;

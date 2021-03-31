@@ -1,8 +1,6 @@
 ﻿using Binance.Net.Enums;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using Utils.Candles.Models;
 using Utils.Strategies.Models;
 using Utils.Trading;

@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Utils;
 using Utils.Candles.Models;
 using Utils.Clients;
@@ -90,6 +91,7 @@ namespace TradingService.Trader
                                     _candles[intervalCandle.Interval][symbolCandle.Symbol].Add(kline.Date, kline);
                                 }
                             }
+                            _candles[intervalCandle.Interval][symbolCandle.Symbol] = _candles[intervalCandle.Interval][symbolCandle.Symbol].OrderBy(item => item.Key).ToDictionary(keyItem => keyItem.Key, valueItem => valueItem.Value);
                             Console.WriteLine("Recieved {0} Candles for {1} - {2}", symbolCandle.Klines.Count, symbolCandle.Symbol, intervalCandle.Interval);
                         }
                     }
@@ -98,6 +100,16 @@ namespace TradingService.Trader
                         foreach(var strategy in _strategies)
                         {
                             strategy.Value.SetupIndicators(_candles);
+                            for(var i = 156; i < 400; i++)
+                            {
+                                if(strategy.Value.EntryStrategy.LongCondition.IsTrue(_candles, i))
+                                {
+                                    Console.WriteLine("Triggered True on {0}", i);
+                                } else
+                                {
+                                    Console.WriteLine("Triggered False on {0}", i);
+                                }
+                            }
                         }
                     }
                     break;

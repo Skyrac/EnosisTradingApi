@@ -54,7 +54,7 @@ namespace Utils.Candles.Models
         }
         public T GetIndicator<T>(string indicator) where T : ResultBase
         {
-            if (Indicators.ContainsKey(indicator) && Indicators[indicator].GetType() == typeof(T))
+            if (Indicators.ContainsKey(indicator))
             {
                 return (T)Indicators[indicator];
             }

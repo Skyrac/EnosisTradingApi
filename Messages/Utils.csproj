@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <Folder Include="Candles\Enums\" />
-    <Folder Include="Strategies\Models\" />
     <Folder Include="Strategies\Enums\" />
   </ItemGroup>
 

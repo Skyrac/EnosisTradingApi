@@ -1,4 +1,5 @@
-﻿using CryptoExchange.Net;
+﻿using Binance.Net.Enums;
+using CryptoExchange.Net;
 using System;
 using System.Collections.Generic;
 using Utils.Candles.Models;
@@ -10,13 +11,13 @@ namespace TradingService.Trader
     public class BaseTrader
     {
         protected EExchange _exchange;
-        protected int _requiredCandles = 0;
         protected bool _paperTest;
         private List<BaseClient> _clients = new List<BaseClient>();
         private Dictionary<string, Strategy> _strategies = new Dictionary<string, Strategy>();
         private BaseClient _defaultClient;
-        private const string keyString = "{0}_{1}"; 
-        private Dictionary<string, Dictionary<DateTime, Kline>> _candles = new Dictionary<string, Dictionary<DateTime, Kline>>();
+        private const string keyString = "{0}_{1}";
+        private Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> _candles = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
+        private Dictionary<string, int> _requiredCandlesPerSymbol = new Dictionary<string, int>();
         public BaseTrader(BaseClient defaultClient, EExchange exchange)
         {
             _defaultClient = defaultClient;
@@ -31,8 +32,16 @@ namespace TradingService.Trader
             }
             _strategies.Add(key, strategy);
             //TODO: Subscribe to Candles
-
-            _requiredCandles = Math.Max(_requiredCandles, strategy.RequiredCandles);
+            foreach(var symbol in strategy.Symbols)
+            {
+                if(!_requiredCandlesPerSymbol.ContainsKey(symbol))
+                {
+                    _requiredCandlesPerSymbol.Add(symbol, strategy.RequiredCandles);
+                } else
+                {
+                    _requiredCandlesPerSymbol[symbol] = strategy.RequiredCandles;
+                }
+            }
 
             //TODO: Recieve Required Candles
         }

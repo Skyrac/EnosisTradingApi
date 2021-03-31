@@ -156,5 +156,23 @@ namespace CandleService.Exchanges
         {
             throw new NotImplementedException();
         }
+
+        protected override async Task<IEnumerable<Kline>> RequestKlines(string symbol, KlineInterval interval, int? candles, DateTime? start, DateTime? end)
+        {
+            var result = await client.Spot.Market.GetKlinesAsync(symbol, interval, start, end, candles);
+            var entries = new List<Kline>();
+            while (!result.Success)
+            {
+                Console.WriteLine("{1} Webrequest: ERROR ON INITIAL {0}\nTry again...", result.Error, symbol);
+                Thread.Sleep(200);
+                result = await client.Spot.Market.GetKlinesAsync(symbol, interval, start, end, candles);
+            }
+            var klines = result.Data;
+            foreach (var rawKline in klines)
+            {
+                entries.Add(new Kline(rawKline));
+            }
+            return entries;
+        }
     }
 }

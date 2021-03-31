@@ -3,6 +3,7 @@
     public enum EMessage
     {
         CandleServiceSubscription,
-        CandleServiceUpdate
+        CandleServiceUpdate,
+        CandleServiceHistoryCandles
     }
 }

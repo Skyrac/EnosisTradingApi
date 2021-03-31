@@ -5,9 +5,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
+using Utils.Clients.Enums;
 using Utils.Enums;
 using Utils.Messages.Models;
 
@@ -20,6 +22,7 @@ namespace CandleService.Exchanges
         protected Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>> _listeners = new Dictionary<string, Dictionary<KlineInterval, Dictionary<Subscriber, int>>>();
         protected ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> _candles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>>();
         private List<Subscriber> _subscribers = new List<Subscriber>();
+        private Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> _historyCandles = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
         private Timer _timer;
         public BaseExchange(EExchange exchange)
         {
@@ -53,26 +56,25 @@ namespace CandleService.Exchanges
             return false;
         }
 
-        public void AddListener(string[] symbols, KlineInterval interval, Subscriber subscriber)
+        public async Task AddListener(WrappedIntervalCandles[] items, Subscriber subscriber)
         {
             if (!_subscribers.Contains(subscriber))
             {
                 _subscribers.Add(subscriber);
             }
             var subscriptionSymbols = new List<string>();
-            if(symbols == null || symbols.Length == 0)
+            foreach (var intervalItem in items)
             {
-                symbols = GetSymbols();
-            }
-            foreach (var symbol in symbols)
-            {
-                Console.WriteLine("Adding Listener on {0} - {1}", symbol, interval);
-                if(AddListener(symbol, interval, subscriber))
+                foreach (var symbolItem in intervalItem.Candles)
                 {
-                    subscriptionSymbols.Add(symbol);
+                    Console.WriteLine("Adding Listener on {0} - {1}", symbolItem.Symbol, intervalItem.Interval);
+                    if (AddListener(symbolItem.Symbol, intervalItem.Interval, subscriber))
+                    {
+                        subscriptionSymbols.Add(symbolItem.Symbol);
+                    }
                 }
+                await SubscribeSymbol(intervalItem.Interval, subscriptionSymbols.ToArray());
             }
-            _ = SubscribeSymbol(interval, subscriptionSymbols.ToArray());
         }
 
         public void RemoveListener(string[] symbols, KlineInterval interval, Subscriber subscriber)
@@ -108,7 +110,7 @@ namespace CandleService.Exchanges
 
         public virtual void Publish()
         {
-            if(_candles == null || _candles.Count == 0 || _subscribers.Count == 0)
+            if (_candles == null || _candles.Count == 0 || _subscribers.Count == 0)
             {
                 return;
             }
@@ -132,11 +134,16 @@ namespace CandleService.Exchanges
                         var kline = _candles[interval][symbol];
                         kline.Dirty = false;
                         _wrappedIntervals[index].Candles.Add(new WrappedSymbolCandle(symbol, new Kline(kline)));
+                        AddOrUpdateHistoryCandle(interval, symbol, kline);
                         items++;
                     }
                 }
 
                 index++;
+            }
+            if (_wrappedIntervals == null || _wrappedIntervals.Count == 0 || _subscribers.Count == 0)
+            {
+                return;
             }
             var message = JsonConvert.SerializeObject(new CandleServiceUpdateMessage(_exchange, _wrappedIntervals));
             foreach(var subscriber in _subscribers)
@@ -175,6 +182,110 @@ namespace CandleService.Exchanges
             foreach(var item in unsubscriptionSymbols)
             {
                 _ = UnsubscribeSymbol(item.Key, item.Value.ToArray());
+            }
+        }
+
+        public virtual async Task<KeyValuePair<KlineInterval, KeyValuePair<string, List<Kline>>>> GetKlinesAsync(string symbol, KlineInterval interval, int? candles, DateTime? start, DateTime? end)
+        {
+            var minutes = ConvertInterval(interval);
+            var items = new KeyValuePair<KlineInterval, KeyValuePair<string, List<Kline>>>(interval, new KeyValuePair<string, List<Kline>>(symbol, new List<Kline>()));
+            if (start == null && end == null && candles != null && _historyCandles.ContainsKey(interval) && _historyCandles[interval].ContainsKey(symbol) && _historyCandles[interval][symbol].Values.Count >= candles)
+            {
+                items.Value.Value.AddRange(_historyCandles[interval][symbol].Values);
+                return items;
+            }
+            var counter = 0;
+
+            if (start != null)
+            {
+                var difference = end - start;
+                counter = (int)Math.Ceiling(difference.Value.TotalMinutes / (int)minutes / 500);
+            }
+            while (counter >= 0)
+            {
+                if (start != null && start >= end)
+                {
+                    break;
+                }
+                var klines = await RequestKlines(symbol, interval, candles, start, end);
+                items.Value.Value.AddRange(klines);
+                if (start != null)
+                {
+                    start = start.Value.AddMinutes(klines.Count() * (int)minutes);
+                }
+                counter--;
+            }
+            AddOrUpdateHistoryCandles(interval, symbol, items.Value.Value);
+            return items;
+        }
+
+        protected void AddOrUpdateHistoryCandles(KlineInterval interval, string symbol, IEnumerable<Kline> klines)
+        {
+            foreach(var kline in klines)
+            {
+                AddOrUpdateHistoryCandle(interval, symbol, kline);
+            }
+        }
+
+        private void AddOrUpdateHistoryCandle(KlineInterval interval, string symbol, Kline kline)
+        {
+            if(_historyCandles == null) { return; }
+            if (!_historyCandles.ContainsKey(interval))
+            {
+                _historyCandles.Add(interval, new Dictionary<string, Dictionary<DateTime, Kline>>());
+            }
+            if (!_historyCandles[interval].ContainsKey(symbol))
+            {
+                _historyCandles[interval].Add(symbol, new Dictionary<DateTime, Kline>());
+            }
+            if (!_historyCandles[interval][symbol].ContainsKey(kline.Date))
+            {
+                Console.WriteLine("Added new Candle to {0} - {1} (Summe: {2})", interval, symbol, _historyCandles[interval][symbol].Count);
+                _historyCandles[interval][symbol].Add(kline.Date, kline);
+            }
+            else
+            {
+                _historyCandles[interval][symbol][kline.Date].Update(kline);
+            }
+        }
+
+        protected abstract Task<IEnumerable<Kline>> RequestKlines(string symbol, KlineInterval interval, int? candles, DateTime? start, DateTime? end);
+
+        private int ConvertInterval(KlineInterval interval)
+        {
+            switch (interval)
+            {
+                case KlineInterval.OneMinute:
+                    return 1;
+                case KlineInterval.ThreeMinutes:
+                    return 3;
+                case KlineInterval.FiveMinutes:
+                    return 5;
+                case KlineInterval.FifteenMinutes:
+                    return 15;
+                case KlineInterval.ThirtyMinutes:
+                    return 30;
+                case KlineInterval.OneHour:
+                    return 60;
+                case KlineInterval.TwoHour:
+                    return 120;
+                case KlineInterval.FourHour:
+                    return 240;
+                case KlineInterval.SixHour:
+                    return 360;
+                case KlineInterval.EightHour:
+                    return 480;
+                case KlineInterval.TwelveHour:
+                    return 720;
+                case KlineInterval.OneDay:
+                    return 1440;
+                case KlineInterval.ThreeDay:
+                    return 1440 * 3;
+                case KlineInterval.OneWeek:
+                    return 1440 * 7;
+                case KlineInterval.OneMonth:
+                    return 1440 * 30;
+                default: return 1;
             }
         }
 

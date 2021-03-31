@@ -1,5 +1,6 @@
 ﻿using Binance.Net.Enums;
 using Newtonsoft.Json;
+using Utils.Candles.Models;
 using Utils.Enums;
 using Utils.Messages.Enums;
 
@@ -7,17 +8,18 @@ namespace Utils.Messages.Models
 {
     public class CandleServiceSubscriptionMessage : BaseMessage
     {
-        public KlineInterval Interval { get; set; }
         public EExchange Exchange { get; set; }
-        public string[] Symbols { get; set; }
+        public WrappedIntervalCandles[] SubscriptionItems { get; set; }
+        public int RequiredCandles { get; set; }
+
         [JsonConstructor]
         private CandleServiceSubscriptionMessage() : base(EMessage.CandleServiceSubscription) { }
 
-        public CandleServiceSubscriptionMessage(EExchange exchange, KlineInterval interval, params string[] symbols) : this()
+        public CandleServiceSubscriptionMessage(EExchange exchange, int requiredCandles, params WrappedIntervalCandles[] items) : this()
         {
             Exchange = exchange;
-            Interval = interval;
-            Symbols = symbols;
+            SubscriptionItems = items;
+            RequiredCandles = requiredCandles;
         }
     }
 }

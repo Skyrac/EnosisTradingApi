@@ -19,6 +19,7 @@ namespace CandleService
             Server = new WebSocketServer("ws://localhost:4300");
             Server.AddWebSocketService<Subscriber>("/subscribe");
             Server.Start();
+            Console.WriteLine("SERVER STARTED LISTENING");
             Console.ReadKey();
         }
     }

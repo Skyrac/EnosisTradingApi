@@ -69,9 +69,17 @@ namespace Utils.Strategies
             var items = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
             foreach (var interval in _requiredCandles.Keys)
             {
+                if (!candles.ContainsKey(interval))
+                {
+                    continue;
+                }
                 items.Add(interval, new Dictionary<string, Dictionary<DateTime, Kline>>());
                 foreach(var symbol in _requiredCandles[interval])
                 {
+                    if(!candles[interval].ContainsKey(symbol))
+                    {
+                        continue;
+                    }
                     items[interval].Add(symbol, candles[interval][symbol]);
                 }
             }

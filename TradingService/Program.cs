@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Binance.Net.Enums;
+using System;
 using TradingService.Trader;
 using Utils.Clients;
 using Utils.Enums;
@@ -14,10 +15,12 @@ namespace TradingService
         static void Main(string[] args)
         {
             var trader = new BaseTrader(new BinanceBaseClient(), EExchange.BinanceSpot);
-            var strategy = new BaseStrategy()
+            var strategy = new BaseStrategy();
+            foreach(var coreSymbol in "MTLUSDT,HOTUSDT,CELRUSDT,CHZUSDT,DENTUSDT,MATICUSDT,ONEUSDT,BTTUSDT,RENUSDT,LINKUSDT,XRPUSDT,BANDUSDT,ETHUSDT,ZILUSDT,CVCUSDT,RLCUSDT,DOGEUSDT,WAVESUSDT,ATOMUSDT,XTZUSDT,IOSTUSDT,RVNUSDT,QTUMUSDT,IOTAUSDT,KAVAUSDT,BTCUSDT,ADAUSDT,ALGOUSDT,VETUSDT,EOSUSDT,TRXUSDT,XLMUSDT,HBARUSDT,FTMUSDT,NKNUSDT,BNBUSDT,BCHUSDT,DASHUSDT,LTCUSDT,ZECUSDT,ANKRUSDT,NEOUSDT,ICXUSDT,ETCUSDT,ZRXUSDT,ENJUSDT,ONTUSDT,BATUSDT,OMGUSDT".Split(","))
             {
-                LongCondition = GenerateLongCondition()
-            };
+
+                strategy.AddConditionSequence(Utils.Trading.Enums.ESide.Long, coreSymbol, GenerateLongCondition(coreSymbol, KlineInterval.OneMinute));
+            }
             trader.AddStrategy(new Strategy()
             {
                 RequiredCandles = 400,
@@ -28,7 +31,7 @@ namespace TradingService
             Console.ReadKey();
         }
 
-        private static ConditionSequence GenerateLongCondition()
+        private static ConditionSequence GenerateLongCondition(string symbol, KlineInterval interval)
         {
             var condition = new ConditionSequence();
             var subCondition = new ConditionSequence();
@@ -38,8 +41,8 @@ namespace TradingService
                 FirstItem = new ConditionItem()
                 {
                     Name = "EMA_8",
-                    Interval = Binance.Net.Enums.KlineInterval.OneMinute,
-                    Symbol = "ETHUSDT",
+                    Interval = interval,
+                    Symbol = symbol,
                     Index = 0,
                     Indicator = new IndicatorProperties("Ema", "GetEma", 8)
                 },
@@ -47,8 +50,8 @@ namespace TradingService
                 SecondItem = new ConditionItem()
                 {
                     Name = "EMA_21",
-                    Interval = Binance.Net.Enums.KlineInterval.OneMinute,
-                    Symbol = "ETHUSDT",
+                    Interval = interval,
+                    Symbol = symbol,
                     Index = 0,
                     Indicator = new IndicatorProperties("Ema", "GetEma", 21)
                 }
@@ -58,8 +61,8 @@ namespace TradingService
                 FirstItem = new ConditionItem()
                 {
                     Name = "EMA_21",
-                    Interval = Binance.Net.Enums.KlineInterval.OneMinute,
-                    Symbol = "ETHUSDT",
+                    Interval = interval,
+                    Symbol = symbol,
                     Index = 0,
                     Indicator = new IndicatorProperties("Ema", "GetEma", 21)
                 },
@@ -67,8 +70,8 @@ namespace TradingService
                 SecondItem = new ConditionItem()
                 {
                     Name = "EMA_34",
-                    Interval = Binance.Net.Enums.KlineInterval.OneMinute,
-                    Symbol = "ETHUSDT",
+                    Interval = interval,
+                    Symbol = symbol,
                     Index = 0,
                     Indicator = new IndicatorProperties("Ema", "GetEma", 34)
                 }
@@ -78,8 +81,8 @@ namespace TradingService
                 FirstItem = new ConditionItem()
                 {
                     Name = "EMA_34",
-                    Interval = Binance.Net.Enums.KlineInterval.OneMinute,
-                    Symbol = "ETHUSDT",
+                    Interval = interval,
+                    Symbol = symbol,
                     Index = 0,
                     Indicator = new IndicatorProperties("Ema", "GetEma", 21)
                 },
@@ -87,8 +90,8 @@ namespace TradingService
                 SecondItem = new ConditionItem()
                 {
                     Name = "Close",
-                    Interval = Binance.Net.Enums.KlineInterval.OneMinute,
-                    Symbol = "ETHUSDT",
+                    Interval = interval,
+                    Symbol = symbol,
                     Index = 0
                 }
             });

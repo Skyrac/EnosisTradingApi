@@ -27,7 +27,7 @@ namespace CandleService.Exchanges
         public BaseExchange(EExchange exchange)
         {
             _exchange = exchange;
-            _timer = new Timer((_) => Publish(), null, 0, 1000);
+            _timer = new Timer((_) => Publish(), null, 0, 250);
         }
 
         protected abstract string[] GetSymbols();
@@ -119,11 +119,17 @@ namespace CandleService.Exchanges
             return false;
         }
 
+        protected bool CheckUp = false;
+
         public virtual void Publish()
         {
             if (_candles == null || _candles.Count == 0 || _subscribers.Count == 0)
             {
                 return;
+            }
+            if(CheckUp)
+            {
+                Console.WriteLine("CheckUp Reached in Publish!");
             }
             var _wrappedIntervals = new List<WrappedIntervalCandles>();
             var availableCandles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>>(_candles);
@@ -236,7 +242,6 @@ namespace CandleService.Exchanges
             {
                 AddOrUpdateHistoryCandle(interval, symbol, kline);
             }
-            OrderCandles(interval, symbol);
         }
 
         private void AddOrUpdateHistoryCandle(KlineInterval interval, string symbol, Kline kline, bool order = false)
@@ -252,7 +257,7 @@ namespace CandleService.Exchanges
             }
             if (!_historyCandles[interval][symbol].ContainsKey(kline.Date))
             {
-                Console.WriteLine("Added new Candle to {0} - {1} (Summe: {2})", interval, symbol, _historyCandles[interval][symbol].Count);
+                Console.WriteLine("{3}: Added new Candle to {0} - {1} (Summe: {2})", interval, symbol, _historyCandles[interval][symbol].Count, DateTime.Now);
                 _historyCandles[interval][symbol].Add(kline.Date, kline);
             }
             else
@@ -274,7 +279,7 @@ namespace CandleService.Exchanges
             {
                 if(_historyCandles[interval][symbol].Remove(_historyCandles[interval][symbol].First().Key, out Kline kline))
                 {
-                    Console.WriteLine("Removed Candle from {0} - {1} with start {2}! Remaining: {3} ", symbol, interval, kline.Date, _historyCandles[interval][symbol].Keys.Count);
+                    Console.WriteLine("{4}: Removed Candle from {0} - {1} with start {2}! Remaining: {3}", symbol, interval, kline.Date, _historyCandles[interval][symbol].Keys.Count, DateTime.Now);
                 }
             }
         }

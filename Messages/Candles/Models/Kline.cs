@@ -13,6 +13,9 @@ namespace Utils.Candles.Models
             get; set;
         }
 
+
+        public bool IsFinal { get; set; }
+
         [JsonIgnore]
         public bool Dirty { get; set; } = false;
         [JsonIgnore]
@@ -40,6 +43,7 @@ namespace Utils.Candles.Models
             this.Low = kline.Low;
             this.Volume = kline.BaseVolume;
             this.CloseTime = kline.CloseTime;
+            this.IsFinal = kline.Final;
         }
 
         public Kline(Kline kline)
@@ -51,6 +55,7 @@ namespace Utils.Candles.Models
             this.Low = kline.Low;
             this.Volume = kline.Volume;
             this.CloseTime = kline.CloseTime;
+            this.IsFinal = kline.IsFinal;
         }
         public T GetIndicator<T>(string indicator) where T : ResultBase
         {

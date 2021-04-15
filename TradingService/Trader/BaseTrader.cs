@@ -51,13 +51,16 @@ namespace TradingService.Trader
 
         private void HandleMessage(EMessage type, string rawData)
         {
-            Console.WriteLine("Recieved Message of Type {0}", type);
             switch (type)
             {
                 case EMessage.CandleServiceSubscription:
                     break;
                 case EMessage.CandleServiceUpdate:
-                    TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies);
+                    if(TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies))
+                    {
+                        Console.WriteLine("Check for Entrance");
+                    }
+                    
                     break;
                 case EMessage.CandleServiceHistoryCandles:
                     TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);

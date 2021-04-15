@@ -1,4 +1,5 @@
 ﻿using Binance.Net.Enums;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Utils.Candles.Models;
@@ -8,29 +9,87 @@ using Utils.Trading.Enums;
 
 namespace Utils.Strategies
 {
+    /// <summary>
+    /// A Base Strategy can contain several LongConditions which default to one "core" symbol
+    /// </summary>
     public class BaseStrategy
     {
-        public ConditionSequence LongCondition { get; set; }
-        public ConditionSequence ShortCondition { get; set; }
+        public Dictionary<string, ConditionSequence> LongConditions { get; set; }
+        public Dictionary<string, ConditionSequence> ShortConditions { get; set; }
 
+        [JsonConstructor]
+        public BaseStrategy() { }
+
+        public void AddConditionSequence(ESide side, string coreSymbol, ConditionSequence condition)
+        {
+            switch (side)
+            {
+                case ESide.Long:
+                    if(LongConditions == null)
+                    {
+                        LongConditions = new Dictionary<string, ConditionSequence>();
+                    }
+                    if(!LongConditions.ContainsKey(coreSymbol))
+                    {
+                        LongConditions.Add(coreSymbol, condition);
+                    }
+                    break;
+                case ESide.Short:
+                    if (ShortConditions == null)
+                    {
+                        ShortConditions = new Dictionary<string, ConditionSequence>();
+                    }
+                    if (!ShortConditions.ContainsKey(coreSymbol))
+                    {
+                        ShortConditions.Add(coreSymbol, condition);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns>Condition Items from all Core Symbols</returns>
         public List<ConditionItem> GetConditionItems()
         {
             var conditionItems = new List<ConditionItem>();
-            if (LongCondition != null)
+            if (LongConditions != null)
             {
-                conditionItems.AddRange(LongCondition.GetRequiredConditionItems());
+                foreach (var coreSymbol in LongConditions.Keys)
+                {
+                    conditionItems.AddRange(LongConditions[coreSymbol].GetRequiredConditionItems());
+                }
             }
 
-            if (ShortCondition != null)
+            if (ShortConditions != null)
             {
-                conditionItems.AddRange(ShortCondition.GetRequiredConditionItems());
+                foreach (var coreSymbol in ShortConditions.Keys)
+                {
+                    conditionItems.AddRange(ShortConditions[coreSymbol].GetRequiredConditionItems());
+                }
+            }
+            return conditionItems;
+        }
+
+        public List<ConditionItem> GetConditionItems(string coreSymbol)
+        {
+            var conditionItems = new List<ConditionItem>();
+            if (LongConditions != null && LongConditions.ContainsKey(coreSymbol))
+            {
+                conditionItems.AddRange(LongConditions[coreSymbol].GetRequiredConditionItems());
+            }
+
+            if (ShortConditions != null && ShortConditions.ContainsKey(coreSymbol))
+            {
+                conditionItems.AddRange(ShortConditions[coreSymbol].GetRequiredConditionItems());
             }
             return conditionItems;
         }
 
 
 
-        public virtual CloseReason CloseLong(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)
+        public virtual ECloseReason CloseLong(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)
         {
             //var candle = index > 0 && index < klines.Count() ? klines.ElementAt(index) : klines.Last();
             //info.High = Math.Max(candle.High, info.High);
@@ -42,10 +101,10 @@ namespace Utils.Strategies
             //{
             //    return CloseReason.TakeProfit;
             //}
-            return CloseReason.NoClose;
+            return ECloseReason.NoClose;
         }
 
-        public virtual CloseReason CloseShort(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)
+        public virtual ECloseReason CloseShort(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)
         {
             //var candle = index > 0 && index < klines.Count() ? klines.ElementAt(index) : klines.Last();
             //info.High = Math.Max(candle.High, info.High);
@@ -58,7 +117,7 @@ namespace Utils.Strategies
             //{
             //    return CloseReason.TakeProfit;
             //}
-            return CloseReason.NoClose;
+            return ECloseReason.NoClose;
         }
     }
 }

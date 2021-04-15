@@ -18,7 +18,6 @@ namespace Utils.Trading
             {
                 return;
             }
-            Console.WriteLine("Recieved History Candles for {0} intervals", historyCandles.Candles.Count);
             foreach (var intervalCandle in historyCandles.Candles)
             {
                 if (!candles.ContainsKey(intervalCandle.Interval))
@@ -39,7 +38,6 @@ namespace Utils.Trading
                         }
                     }
                     candles[intervalCandle.Interval][symbolCandle.Symbol] = candles[intervalCandle.Interval][symbolCandle.Symbol].OrderBy(item => item.Key).ToDictionary(keyItem => keyItem.Key, valueItem => valueItem.Value);
-                    Console.WriteLine("Recieved {0} Candles for {1} - {2}", symbolCandle.Klines.Count, symbolCandle.Symbol, intervalCandle.Interval);
                 }
             }
             if (strategies != null)
@@ -53,16 +51,15 @@ namespace Utils.Trading
 
         public static bool HandleCandleServiceUpdateAndCheckForNewCandle(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, Dictionary<string, Strategy> strategies)
         {
+            var date = DateTime.Now;
             var data = JsonConvert.DeserializeObject<CandleServiceUpdateMessage>(rawData);
             if (data == null || data.IntervalCandles.Count == 0)
             {
                 return false;
             }
             var newCandle = false;
-            Console.WriteLine("Recieved Intervals: {0}", data.IntervalCandles.Count);
             foreach (var intervalCandle in data.IntervalCandles)
             {
-                Console.WriteLine("Interval {0} got {1} candles", intervalCandle.Interval, intervalCandle.Candles.Count);
                 if (!candles.ContainsKey(intervalCandle.Interval))
                 {
                     candles.Add(intervalCandle.Interval, intervalCandle.ConvertCandlesToDictionary());
@@ -78,9 +75,14 @@ namespace Utils.Trading
                         else if (candles[intervalCandle.Interval][symbolCandle.Symbol].ContainsKey(symbolCandle.Kline.Date))
                         {
                             candles[intervalCandle.Interval][symbolCandle.Symbol][symbolCandle.Kline.Date].Update(symbolCandle.Kline);
+                            if(symbolCandle.Kline.IsFinal)
+                            {
+                                Console.WriteLine("{0}: Recieved Final Candle on {1} - {2}", DateTime.Now,symbolCandle.Symbol, intervalCandle.Interval );
+                            }
                         }
                         else
                         {
+                            Console.WriteLine("Recieved new candle on {0} - {1} at {2}, Recieved Message at {3}", symbolCandle.Symbol, intervalCandle.Interval, DateTime.Now, date);
                             candles[intervalCandle.Interval][symbolCandle.Symbol].Add(symbolCandle.Kline.Date, symbolCandle.Kline);
                             newCandle = true;
                         }

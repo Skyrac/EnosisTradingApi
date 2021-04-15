@@ -15,6 +15,9 @@ namespace Utils.Strategies.Models
         public KlineInterval Interval { get; set; }
         public string Symbol { get; set; }
         public IndicatorProperties Indicator { get; set; } //Empty if candle.close etc.
+        /// <summary>
+        /// Index from Last Candle (1 = Previous Candle)
+        /// </summary>
         public int Index { get; set; }
         private PropertyInfo _info;
         public decimal? GetValue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
@@ -30,7 +33,8 @@ namespace Utils.Strategies.Models
                 var indicator = klines.ElementAt(index).GetIndicator<ResultBase>(Name);
                 if(indicator == null)
                 {
-                    GenerateIndicators(candles);
+                    //Maybe return false -1 instead?
+                    GenerateIndicators(candles, 0);
                     indicator = klines.ElementAt(index).GetIndicator<ResultBase>(Name);
                 }
                 if(_info == null)

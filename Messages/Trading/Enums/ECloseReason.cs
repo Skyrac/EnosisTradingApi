@@ -1,6 +1,6 @@
 ﻿namespace Utils.Trading.Enums
 {
-    public enum CloseReason
+    public enum ECloseReason
     {
         Unknown,
         NoClose,

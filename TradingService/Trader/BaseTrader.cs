@@ -65,21 +65,27 @@ namespace TradingService.Trader
                             var strategy = _strategies[strategyNames];
                             strategy.SetupIndicators(_candles);
                             var tradeInfos = strategy.EntryStrategy.EnterTrade(_candles, -1);
+                            foreach(var info in tradeInfos)
+                            {
+                                Console.WriteLine("{0}: ENTER TRADE ON {1}", info.Opened, info.Symbol);
+                            }
                         }
                     }
                     
                     break;
                 case EMessage.CandleServiceHistoryCandles:
                     TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);
-                    for(var i = 179; i < 350; i++)
+
+                    foreach (var strategyNames in _strategies.Keys)
                     {
-                        foreach (var strategyNames in _strategies.Keys)
+                        var strategy = _strategies[strategyNames];
+                        strategy.SetupIndicators(_candles);
+                        for(var i = 178; i < 399; i++)
                         {
-                            var strategy = _strategies[strategyNames];
-                            strategy.SetupIndicators(_candles);
-                           foreach(var info in strategy.EntryStrategy.EnterTrade(_candles, i))
+                            var infos = strategy.EntryStrategy.EnterTrade(_candles, i);
+                            foreach(var info in infos)
                             {
-                                Console.WriteLine("{0}: ENTER TRADE ON {1}", info.Opened, info.Symbol);
+                                Console.WriteLine("Entered Trade on {0} with Stop = {1} and TP = {2}", info.Symbol, info.StopLoss, info.TakeProfit);        //NOTE: Wie komme ich an aktuellen Preis? :)
                             }
                         }
                     }
@@ -102,7 +108,7 @@ namespace TradingService.Trader
             foreach(var interval in strategy.GetRequiredIntervalCandles())
             {
                 var wrappedSymbols = new List<WrappedSymbolCandle>();
-                foreach(var symbol in interval.Value)
+                foreach(var symbol in interval.Value.Where(item => !string.IsNullOrEmpty(item)))
                 {
                     if (!_requiredCandlesPerSymbol.ContainsKey(symbol))
                     {

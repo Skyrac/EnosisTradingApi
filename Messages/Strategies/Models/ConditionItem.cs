@@ -11,10 +11,11 @@ namespace Utils.Strategies.Models
 {
     public class ConditionItem
     {
-        public string Name { get; set; }   //EMA_100 || Close (bei Candle)
+        public string Name { get; set; }   //EMA_100 || Close (bei Candle) || Value bei Set Value
         public KlineInterval Interval { get; set; }
         public string Symbol { get; set; }
         public IndicatorProperties Indicator { get; set; } //Empty if candle.close etc.
+        public decimal Value { get; set; }  //Lower valued as Indicator, but higher than candle close
         /// <summary>
         /// Index from Last Candle (1 = Previous Candle)
         /// </summary>
@@ -22,7 +23,11 @@ namespace Utils.Strategies.Models
         private PropertyInfo _info;
         public decimal? GetValue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
-            if(!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol))
+            if (Name == "Value")
+            {
+                return Value;
+            }
+            if (!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol))
             {
                 return -1;
             }

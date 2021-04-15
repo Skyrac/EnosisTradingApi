@@ -74,7 +74,7 @@ namespace Utils.Strategies
                     continue;
                 }
                 items.Add(interval, new Dictionary<string, Dictionary<DateTime, Kline>>());
-                foreach(var symbol in _requiredCandles[interval])
+                foreach(var symbol in _requiredCandles[interval].Where(item => !string.IsNullOrEmpty(item)))
                 {
                     if(!candles[interval].ContainsKey(symbol))
                     {

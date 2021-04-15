@@ -34,34 +34,6 @@ namespace Utils.Strategies.Models
             ConditionOperators.Add(conditionOperator);
         }
 
-        //public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
-        //{
-        //    switch (Operator)
-        //    {
-        //        case EConditionOperator.GreaterOrEquals:
-        //            return FirstItem.GetValue(candles, index) >= SecondItem.GetValue(candles, index);
-
-        //        case EConditionOperator.LowerOrEquals:
-        //            return FirstItem.GetValue(candles, index) <= SecondItem.GetValue(candles, index);
-
-        //        case EConditionOperator.Equals:
-        //            return FirstItem.GetValue(candles, index) == SecondItem.GetValue(candles, index);
-
-        //        case EConditionOperator.Unlike:
-        //            return FirstItem.GetValue(candles, index) != SecondItem.GetValue(candles, index);
-
-        //        case EConditionOperator.GreaterThan:
-        //            return FirstItem.GetValue(candles, index) > SecondItem.GetValue(candles, index);
-
-        //        case EConditionOperator.LowerThan:
-        //            return FirstItem.GetValue(candles, index) < SecondItem.GetValue(candles, index);
-
-        //        default:
-        //            return false;
-        //    }
-        //}
-
-
 
         public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
@@ -125,7 +97,7 @@ namespace Utils.Strategies.Models
                 //var name = ConditionItems[i].Name + "_" + i;
                 //variables.Add(name, ConditionItems[i].GetValue(candles, index));
                 var operatorString = ConditionOperators.Count > i ? OperatorToString(ConditionOperators[i]) : "";
-                sentence = string.Format("{0} {1} {2}", ConditionItems[i].GetValue(candles, index), operatorString);
+                sentence = string.Format("{0} {1} {2} ", sentence, ConditionItems[i].GetValue(candles, index), operatorString);
             }
             var result = new decimal(-1);
             try

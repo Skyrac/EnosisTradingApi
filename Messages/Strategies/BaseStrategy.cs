@@ -119,6 +119,28 @@ namespace Utils.Strategies
                     conditionItems.AddRange(ShortConditions[coreSymbol].GetRequiredConditionItems());
                 }
             }
+
+            if(TakeProfitConditions != null)
+            {
+                foreach (var coreSymbol in TakeProfitConditions.Keys)
+                {
+                    foreach(var conditionSequence in TakeProfitConditions[coreSymbol].Values)
+                    {
+                        conditionItems.AddRange(conditionSequence.GetConditionItems());
+                    }
+                }
+            }
+
+            if (StopLossConditions != null)
+            {
+                foreach (var coreSymbol in StopLossConditions.Keys)
+                {
+                    foreach (var conditionSequence in StopLossConditions[coreSymbol].Values)
+                    {
+                        conditionItems.AddRange(conditionSequence.GetConditionItems());
+                    }
+                }
+            }
             return conditionItems;
         }
 
@@ -133,6 +155,22 @@ namespace Utils.Strategies
             if (ShortConditions != null && ShortConditions.ContainsKey(coreSymbol))
             {
                 conditionItems.AddRange(ShortConditions[coreSymbol].GetRequiredConditionItems());
+            }
+
+            if (TakeProfitConditions != null)
+            {
+                foreach (var conditionSequence in TakeProfitConditions[coreSymbol].Values)
+                {
+                    conditionItems.AddRange(conditionSequence.GetConditionItems());
+                }
+            }
+
+            if (StopLossConditions != null)
+            {
+                foreach (var conditionSequence in StopLossConditions[coreSymbol].Values)
+                {
+                    conditionItems.AddRange(conditionSequence.GetConditionItems());
+                }
             }
             return conditionItems;
         }
@@ -150,7 +188,7 @@ namespace Utils.Strategies
                     canEnter = true;
                 } else if(ShortConditions != null && ShortConditions.ContainsKey(coreSymbol) && ShortConditions[coreSymbol].IsTrue(candles, index))
                 {
-                    side = ESide.Short;
+                    //side = ESide.Short;
                     canEnter = true;
                 }
                 if (canEnter)
@@ -162,6 +200,7 @@ namespace Utils.Strategies
                         Symbol = coreSymbol,
                         StopLoss = stopLoss,
                         TakeProfit = takeProfit,
+                        Opened = DateTime.Now,
                         Side = side.ToString()
                     });
                 }

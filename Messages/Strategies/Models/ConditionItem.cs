@@ -46,18 +46,21 @@ namespace Utils.Strategies.Models
             }
             return (decimal?)_info.GetValue(candle, null);
         }
-        public void GenerateIndicators(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
+        public void GenerateIndicators(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int requiredCandles)
         {
             if(!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol) || Indicator == null)
             {
                 return;
             }
             var klines = candles[Interval][Symbol];
-            foreach(var indicator in Indicator.GenerateIndicators(klines.Values))
+            if (klines.Count >= requiredCandles)
             {
-                if (klines.ContainsKey(indicator.Date))
+                foreach (var indicator in Indicator.GenerateIndicators(klines.Values))
                 {
-                    klines[indicator.Date].FillIndicator(Name, indicator);
+                    if (klines.ContainsKey(indicator.Date))
+                    {
+                        klines[indicator.Date].FillIndicator(Name, indicator);
+                    }
                 }
             }
         }

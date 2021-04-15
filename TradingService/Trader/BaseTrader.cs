@@ -21,6 +21,8 @@ namespace TradingService.Trader
         protected bool _paperTest;
         private List<BaseClient> _clients = new List<BaseClient>();
         private Dictionary<string, Strategy> _strategies = new Dictionary<string, Strategy>();
+        private Dictionary<string, List<string>> _strategyUsers = new Dictionary<string, List<string>>();
+        private Dictionary<string, BaseClient> _registeredUsers = new Dictionary<string, BaseClient>();
         private BaseClient _defaultClient;
         private const string keyString = "{0}_{1}";
         private Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> _candles = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
@@ -55,7 +57,7 @@ namespace TradingService.Trader
                 case EMessage.CandleServiceSubscription:
                     break;
                 case EMessage.CandleServiceUpdate:
-                    TradingMessageHandler.HandleCandleServiceUpdate(rawData, ref _candles, _strategies);
+                    TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies);
                     break;
                 case EMessage.CandleServiceHistoryCandles:
                     TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);

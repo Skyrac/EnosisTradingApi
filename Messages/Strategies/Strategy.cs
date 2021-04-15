@@ -60,7 +60,7 @@ namespace Utils.Strategies
             var groupedByName = conditionItems.GroupBy(item => item.Name);
             foreach (var item in groupedByName)
             {
-                item.First().GenerateIndicators(candles);
+                item.First().GenerateIndicators(candles, RequiredCandles);
             }
         }
 

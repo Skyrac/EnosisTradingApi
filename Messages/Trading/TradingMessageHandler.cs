@@ -51,13 +51,14 @@ namespace Utils.Trading
             }
         }
 
-        public static void HandleCandleServiceUpdate(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, Dictionary<string, Strategy> strategies)
+        public static bool HandleCandleServiceUpdateAndCheckForNewCandle(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, Dictionary<string, Strategy> strategies)
         {
             var data = JsonConvert.DeserializeObject<CandleServiceUpdateMessage>(rawData);
             if (data == null || data.IntervalCandles.Count == 0)
             {
-                return;
+                return false;
             }
+            var newCandle = false;
             Console.WriteLine("Recieved Intervals: {0}", data.IntervalCandles.Count);
             foreach (var intervalCandle in data.IntervalCandles)
             {
@@ -81,10 +82,16 @@ namespace Utils.Trading
                         else
                         {
                             candles[intervalCandle.Interval][symbolCandle.Symbol].Add(symbolCandle.Kline.Date, symbolCandle.Kline);
+                            newCandle = true;
                         }
                     }
                 }
             }
+            foreach (var strategy in strategies)
+            {
+                strategy.Value.SetupIndicators(candles);
+            }
+            return newCandle;
         }
     }
 }

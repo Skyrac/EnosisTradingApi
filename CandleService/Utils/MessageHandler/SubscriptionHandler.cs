@@ -23,7 +23,7 @@ namespace CandleService.Utils.MessageHandler
             }
             var exchange = Program.Exchanges[message.Exchange];
             new Task(async() => {
-                await exchange.AddListener(message.SubscriptionItems, subscriber);
+                await exchange.AddListener(message.SubscriptionItems, subscriber, message.RequiredCandles);
                 var tasks = new List<Task<KeyValuePair<KlineInterval, KeyValuePair<string, List<Kline>>>>>();
                 foreach (var intervalItem in message.SubscriptionItems)
                 {

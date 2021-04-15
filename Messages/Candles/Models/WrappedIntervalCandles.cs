@@ -1,5 +1,6 @@
 ﻿using Binance.Net.Enums;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace Utils.Candles.Models
@@ -20,6 +21,23 @@ namespace Utils.Candles.Models
         {
             Interval = interval;
             Candles = candles;
+        }
+
+        internal Dictionary<string, Dictionary<DateTime, Kline>> ConvertCandlesToDictionary()
+        {
+            var candles = new Dictionary<string, Dictionary<DateTime, Kline>>(Candles.Count);
+            foreach(var candle in Candles)
+            {
+                if(!candles.ContainsKey(candle.Symbol))
+                {
+                    candles.Add(candle.Symbol, new Dictionary<DateTime, Kline>() { { candle.Kline.Date, candle.Kline } });
+                } else
+                {
+                    candles[candle.Symbol].Add(candle.Kline.Date, candle.Kline);
+                }
+            }
+
+            return candles;
         }
     }
 }

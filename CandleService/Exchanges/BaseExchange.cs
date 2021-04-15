@@ -22,6 +22,7 @@ namespace CandleService.Exchanges
         protected ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> _candles = new ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>>();
         private List<Subscriber> _subscribers = new List<Subscriber>();
         private Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> _historyCandles = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
+        private Dictionary<KlineInterval, Dictionary<string, int>> _requiredCandles = new Dictionary<KlineInterval, Dictionary<string, int>>();
         private Timer _timer;
         public BaseExchange(EExchange exchange)
         {
@@ -30,6 +31,38 @@ namespace CandleService.Exchanges
         }
 
         protected abstract string[] GetSymbols();
+        public async Task AddListener(WrappedIntervalCandles[] items, Subscriber subscriber, int requiredCandles)
+        {
+            if (!_subscribers.Contains(subscriber))
+            {
+                _subscribers.Add(subscriber);
+            }
+            var subscriptionSymbols = new List<string>();
+            foreach (var intervalItem in items)
+            {
+                if (!_requiredCandles.ContainsKey(intervalItem.Interval))
+                {
+                    _requiredCandles.Add(intervalItem.Interval, new Dictionary<string, int>(intervalItem.Candles.Count));
+                }
+                foreach (var symbolItem in intervalItem.Candles)
+                {
+                    if (!_requiredCandles[intervalItem.Interval].ContainsKey(symbolItem.Symbol))
+                    {
+                        _requiredCandles[intervalItem.Interval].Add(symbolItem.Symbol, requiredCandles);
+                    }
+                    else
+                    {
+                        _requiredCandles[intervalItem.Interval][symbolItem.Symbol] = Math.Max(requiredCandles, _requiredCandles[intervalItem.Interval][symbolItem.Symbol]);
+                    }
+                    Console.WriteLine("Adding Listener on {0} - {1}", symbolItem.Symbol, intervalItem.Interval);
+                    if (AddListener(symbolItem.Symbol, intervalItem.Interval, subscriber))
+                    {
+                        subscriptionSymbols.Add(symbolItem.Symbol);
+                    }
+                }
+                await SubscribeSymbol(intervalItem.Interval, subscriptionSymbols.ToArray());
+            }
+        }
 
         private bool AddListener(string symbol, KlineInterval interval, Subscriber subscriber)
         {
@@ -53,27 +86,6 @@ namespace CandleService.Exchanges
                 return true;
             }
             return false;
-        }
-
-        public async Task AddListener(WrappedIntervalCandles[] items, Subscriber subscriber)
-        {
-            if (!_subscribers.Contains(subscriber))
-            {
-                _subscribers.Add(subscriber);
-            }
-            var subscriptionSymbols = new List<string>();
-            foreach (var intervalItem in items)
-            {
-                foreach (var symbolItem in intervalItem.Candles)
-                {
-                    Console.WriteLine("Adding Listener on {0} - {1}", symbolItem.Symbol, intervalItem.Interval);
-                    if (AddListener(symbolItem.Symbol, intervalItem.Interval, subscriber))
-                    {
-                        subscriptionSymbols.Add(symbolItem.Symbol);
-                    }
-                }
-                await SubscribeSymbol(intervalItem.Interval, subscriptionSymbols.ToArray());
-            }
         }
 
         public void RemoveListener(string[] symbols, KlineInterval interval, Subscriber subscriber)
@@ -248,11 +260,23 @@ namespace CandleService.Exchanges
                 _historyCandles[interval][symbol][kline.Date].Update(kline);
             }
             OrderCandles(interval, symbol);
+            RemoveUnnecessaryCandles(interval, symbol);
         }
 
         private void OrderCandles(KlineInterval interval, string symbol)
         {
             _historyCandles[interval][symbol] = _historyCandles[interval][symbol].OrderBy(item => item.Key).ToDictionary(keyItem => keyItem.Key, valItem => valItem.Value);
+        }
+
+        private void RemoveUnnecessaryCandles(KlineInterval interval, string symbol)
+        {
+            while(_historyCandles[interval][symbol].Keys.Count > _requiredCandles[interval][symbol])
+            {
+                if(_historyCandles[interval][symbol].Remove(_historyCandles[interval][symbol].First().Key, out Kline kline))
+                {
+                    Console.WriteLine("Removed Candle from {0} - {1} with start {2}! Remaining: {3} ", symbol, interval, kline.Date, _historyCandles[interval][symbol].Keys.Count);
+                }
+            }
         }
 
         protected abstract Task<IEnumerable<Kline>> RequestKlines(string symbol, KlineInterval interval, int? candles, DateTime? start, DateTime? end);

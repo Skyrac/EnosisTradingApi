@@ -1,8 +1,6 @@
 ﻿using Binance.Net;
 using Binance.Net.Enums;
 using Binance.Net.Interfaces;
-using Binance.Net.Objects.Spot;
-using CryptoExchange.Net.Authentication;
 using CryptoExchange.Net.Objects;
 using System;
 using System.Collections.Concurrent;
@@ -11,8 +9,8 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
-using Utils.Enums;
 using Utils.Clients;
+using Utils.Enums;
 namespace CandleService.Exchanges
 {
     public class BinanceExchange : BaseExchange

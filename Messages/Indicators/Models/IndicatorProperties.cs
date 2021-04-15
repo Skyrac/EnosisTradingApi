@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Skender.Stock.Indicators;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Utils.Candles.Models;
 
@@ -22,11 +23,15 @@ namespace Utils.Indicators.Models
             MethodName = methodName;
             Values = values;
         }
-        public IEnumerable<ResultBase> GenerateIndicators(IEnumerable<Kline> klines)
+        public IEnumerable<ResultBase> GenerateIndicators(IEnumerable<Kline> klines, int requiredCandles)
         {
             if (_info == null)
             {
                 _info = typeof(Indicator).GetMethod(MethodName, BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(new[] { typeof(Kline) }); ;
+            }
+            if(klines.Count() < requiredCandles)
+            {
+                return null;
             }
             var values = new object[Values.Length + 1];
             values[0] = klines;

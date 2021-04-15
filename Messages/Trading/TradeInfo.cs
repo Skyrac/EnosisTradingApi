@@ -9,7 +9,7 @@ namespace Utils.Trading
         public decimal High { get; set; }
         public string Side { get; set; }
         public decimal Low { get; set; }
-        public decimal Stop { get; set; }
+        public decimal TakeProfit { get; set; }
         private decimal stopLoss;
         public decimal StopLoss
         {
@@ -19,7 +19,7 @@ namespace Utils.Trading
             }
             set
             {
-                Stop = value;
+                TakeProfit = value;
                 stopLoss = value;
             }
         }

@@ -27,7 +27,7 @@ namespace CandleService.Exchanges
         public BaseExchange(EExchange exchange)
         {
             _exchange = exchange;
-            _timer = new Timer((_) => Publish(), null, 0, 250);
+            _timer = new Timer((_) => Publish(), null, 0, 1000);
         }
 
         protected abstract string[] GetSymbols();

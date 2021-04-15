@@ -11,6 +11,7 @@ using Utils.Messages.Enums;
 using Utils.Messages.Models;
 using Utils.Strategies;
 using Utils.Trading;
+using Utils.Trading.Enums;
 using WebSocketSharp;
 
 namespace TradingService.Trader
@@ -59,11 +60,29 @@ namespace TradingService.Trader
                     if(TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies))
                     {
                         Console.WriteLine("Check for Entrance");
+                        foreach(var strategyNames in _strategies.Keys)
+                        {
+                            var strategy = _strategies[strategyNames];
+                            strategy.SetupIndicators(_candles);
+                            var tradeInfos = strategy.EntryStrategy.EnterTrade(_candles, -1);
+                        }
                     }
                     
                     break;
                 case EMessage.CandleServiceHistoryCandles:
                     TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);
+                    for(var i = 179; i < 350; i++)
+                    {
+                        foreach (var strategyNames in _strategies.Keys)
+                        {
+                            var strategy = _strategies[strategyNames];
+                            strategy.SetupIndicators(_candles);
+                           foreach(var info in strategy.EntryStrategy.EnterTrade(_candles, i))
+                            {
+                                Console.WriteLine("{0}: ENTER TRADE ON {1}", info.Opened, info.Symbol);
+                            }
+                        }
+                    }
                     break;
                 default:
                     Console.WriteLine("Recieved Message with Unknown EMessage-Type");

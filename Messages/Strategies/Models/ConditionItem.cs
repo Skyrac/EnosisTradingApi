@@ -34,8 +34,7 @@ namespace Utils.Strategies.Models
                 if(indicator == null)
                 {
                     //Maybe return false -1 instead?
-                    GenerateIndicators(candles, 0);
-                    indicator = klines.ElementAt(index).GetIndicator<ResultBase>(Name);
+                    return -1;
                 }
                 if(_info == null)
                 {
@@ -59,8 +58,12 @@ namespace Utils.Strategies.Models
             var klines = candles[Interval][Symbol];
             if (klines.Count >= requiredCandles)
             {
-                foreach (var indicator in Indicator.GenerateIndicators(klines.Values))
+                foreach (var indicator in Indicator.GenerateIndicators(klines.Values, requiredCandles))
                 {
+                    if(indicator == null)
+                    {
+                        continue;
+                    }
                     if (klines.ContainsKey(indicator.Date))
                     {
                         klines[indicator.Date].FillIndicator(Name, indicator);

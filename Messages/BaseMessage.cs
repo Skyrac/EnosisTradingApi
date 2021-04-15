@@ -1,5 +1,5 @@
-﻿using Utils.Messages.Enums;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using Utils.Messages.Enums;
 
 namespace Utils
 {

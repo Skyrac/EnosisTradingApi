@@ -1,7 +1,9 @@
 ﻿using Binance.Net.Enums;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Utils.Candles.Models;
 using Utils.Strategies.Models;
 using Utils.Trading;
@@ -16,6 +18,8 @@ namespace Utils.Strategies
     {
         public Dictionary<string, ConditionSequence> LongConditions { get; set; }
         public Dictionary<string, ConditionSequence> ShortConditions { get; set; }
+        public Dictionary<string, Dictionary<ESide, ConditionSequence>> StopLossConditions { get; set; }
+        public Dictionary<string, Dictionary<ESide, ConditionSequence>> TakeProfitConditions { get; set; }
 
         [JsonConstructor]
         public BaseStrategy() { }
@@ -33,6 +37,10 @@ namespace Utils.Strategies
                     {
                         LongConditions.Add(coreSymbol, condition);
                     }
+                    else
+                    {
+                        LongConditions[coreSymbol] = condition;
+                    }
                     break;
                 case ESide.Short:
                     if (ShortConditions == null)
@@ -42,8 +50,50 @@ namespace Utils.Strategies
                     if (!ShortConditions.ContainsKey(coreSymbol))
                     {
                         ShortConditions.Add(coreSymbol, condition);
+                    } else
+                    {
+                        ShortConditions[coreSymbol] = condition;
                     }
                     break;
+            }
+        }
+
+        public void AddStopLossCondition(string coreSymbol, ESide side, ConditionSequence sequence)
+        {
+            if(StopLossConditions == null)
+            {
+                StopLossConditions = new Dictionary<string, Dictionary<ESide, ConditionSequence>>();
+            }
+            if(!StopLossConditions.ContainsKey(coreSymbol))
+            {
+                StopLossConditions.Add(coreSymbol, new Dictionary<ESide, ConditionSequence>() { { side, sequence } });
+            }
+            else if(!StopLossConditions[coreSymbol].ContainsKey(side)) 
+            {
+                StopLossConditions[coreSymbol].Add(side, sequence);
+            } else
+            {
+                StopLossConditions[coreSymbol][side] = sequence;
+            }
+        }
+
+        public void AddTakeProfitCondition(string coreSymbol, ESide side, ConditionSequence sequence)
+        {
+            if (TakeProfitConditions == null)
+            {
+                TakeProfitConditions = new Dictionary<string, Dictionary<ESide, ConditionSequence>>();
+            }
+            if (!TakeProfitConditions.ContainsKey(coreSymbol))
+            {
+                TakeProfitConditions.Add(coreSymbol, new Dictionary<ESide, ConditionSequence>() { { side, sequence } });
+            }
+            else if (!TakeProfitConditions[coreSymbol].ContainsKey(side))
+            {
+                TakeProfitConditions[coreSymbol].Add(side, sequence);
+            }
+            else
+            {
+                TakeProfitConditions[coreSymbol][side] = sequence;
             }
         }
 
@@ -87,7 +137,37 @@ namespace Utils.Strategies
             return conditionItems;
         }
 
-
+        public List<TradeInfo> EnterTrade(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
+        {
+            var infos = new List<TradeInfo>();
+            foreach(var coreSymbol in LongConditions.Keys)
+            {
+                var side = ESide.Long;
+                var canEnter = false;
+                if(LongConditions != null && LongConditions.ContainsKey(coreSymbol) && LongConditions[coreSymbol].IsTrue(candles, index))
+                {
+                    side = ESide.Long;
+                    canEnter = true;
+                } else if(ShortConditions != null && ShortConditions.ContainsKey(coreSymbol) && ShortConditions[coreSymbol].IsTrue(candles, index))
+                {
+                    side = ESide.Short;
+                    canEnter = true;
+                }
+                if (canEnter)
+                {
+                    var stopLoss = StopLossConditions != null && StopLossConditions.ContainsKey(coreSymbol) && StopLossConditions[coreSymbol].ContainsKey(side) ? StopLossConditions[coreSymbol][side].GetDecimal(side, candles, index) : -1;
+                    var takeProfit = TakeProfitConditions != null && TakeProfitConditions.ContainsKey(coreSymbol) && TakeProfitConditions[coreSymbol].ContainsKey(side) ? TakeProfitConditions[coreSymbol][side].GetDecimal(side, candles, index) : -1;
+                    infos.Add(new TradeInfo()
+                    {
+                        Symbol = coreSymbol,
+                        StopLoss = stopLoss,
+                        TakeProfit = takeProfit,
+                        Side = side.ToString()
+                    });
+                }
+            }
+            return infos;
+        }
 
         public virtual ECloseReason CloseLong(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)
         {

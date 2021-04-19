@@ -30,6 +30,7 @@ namespace TradingService.Trader
         private BaseClient _defaultClient;
         private const string keyString = "{0}_{1}";
         private Object entranceLock = new object();
+        private Object candleUpdateLock = new object();
         private Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> _candles = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
         private Dictionary<string, int> _requiredCandlesPerSymbol = new Dictionary<string, int>();
         private WebSocket _socket = new WebSocket("ws://localhost:4300/subscribe");
@@ -62,7 +63,13 @@ namespace TradingService.Trader
                 case EMessage.CandleServiceSubscription:
                     break;
                 case EMessage.CandleServiceUpdate:
-                    if(TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies))
+                    var canEnter = false;
+                    lock (candleUpdateLock)
+                    {
+                        canEnter = TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies);
+                        candles = Tools.DeepCopy(_candles);
+                    }
+                    if (canEnter)
                     {
                         Console.WriteLine("Check for Entrance");
                         lock (entranceLock)
@@ -71,7 +78,6 @@ namespace TradingService.Trader
                             {
                                 var strategy = _strategies[strategyNames];
 
-                                candles = Tools.DeepCopy(_candles);
                                 strategy.SetupIndicators(candles);
                                 var tradeInfos = strategy.EntryStrategy.EnterTrade(candles, -1);
                                 foreach (var info in tradeInfos)
@@ -84,8 +90,11 @@ namespace TradingService.Trader
                     
                     break;
                 case EMessage.CandleServiceHistoryCandles:
-                    TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);
-                    candles = Tools.DeepCopy(_candles);
+                    lock (candleUpdateLock)
+                    {
+                        TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);
+                        candles = Tools.DeepCopy(_candles);
+                    }
                     var watch = new Stopwatch();
                     watch.Start();
                     foreach (var strategyNames in _strategies.Keys)

@@ -40,16 +40,9 @@ namespace Utils.Trading
                     candles[intervalCandle.Interval][symbolCandle.Symbol] = candles[intervalCandle.Interval][symbolCandle.Symbol].OrderBy(item => item.Key).ToDictionary(keyItem => keyItem.Key, valueItem => valueItem.Value);
                 }
             }
-            if (strategies != null)
-            {
-                foreach (var strategy in strategies)
-                {
-                    strategy.Value.SetupIndicators(candles);
-                }
-            }
         }
 
-        public static bool HandleCandleServiceUpdateAndCheckForNewCandle(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, Dictionary<string, Strategy> strategies)
+        public static bool HandleCandleServiceUpdateAndCheckForNewCandle(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
         {
             var date = DateTime.Now;
             var data = JsonConvert.DeserializeObject<CandleServiceUpdateMessage>(rawData);
@@ -88,10 +81,6 @@ namespace Utils.Trading
                         }
                     }
                 }
-            }
-            foreach (var strategy in strategies)
-            {
-                strategy.Value.SetupIndicators(candles);
             }
             return newCandle;
         }

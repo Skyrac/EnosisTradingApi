@@ -212,9 +212,8 @@ namespace CandleService.Exchanges
                 return items;
             }
             var counter = 0;
-            if (candles != null && candles > 1000 && start == null)
+            if (candles != null && candles > 500 && start == null)
             {
-                counter = (int)Math.Ceiling((decimal)candles / 500);
                 start = DateTime.UtcNow.AddMinutes((int)candles * minutes * -1);
                 end = DateTime.UtcNow;
                 candles = null;

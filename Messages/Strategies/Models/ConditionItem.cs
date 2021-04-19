@@ -32,11 +32,12 @@ namespace Utils.Strategies.Models
                 return -1;
             }
             var klines = candles[Interval][Symbol].Values;
-            if(index >= klines.Count)
+
+            index = index == -1 ? klines.Count - 1 - Index : index - Index;
+            if (index >= klines.Count || index < 0)
             {
                 return -1;
             }
-            index = index == -1 ? klines.Count - 1 - Index : index - Index;
             if (Indicator != null)
             {
                 var indicator = klines.ElementAt(index).GetIndicator<ResultBase>(Name);

@@ -4,9 +4,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Utils.Candles.Models;
 using Utils.Strategies.Models;
+using Utils.Tools;
 using Utils.Trading;
 using Utils.Trading.Enums;
 
@@ -182,8 +184,7 @@ namespace Utils.Strategies
             var tasks = new List<Task>();
             foreach(var coreSymbol in LongConditions.Keys)
             {
-                var task = new Task(() =>
-                {
+                var task = Task.Factory.StartNew(() => {
                     var side = ESide.Long;
                     StrategyReturnModel result = null;
                     if (LongConditions != null && LongConditions.ContainsKey(coreSymbol) && (result = LongConditions[coreSymbol].IsTrue(candles, index)).IsTrue)
@@ -218,9 +219,8 @@ namespace Utils.Strategies
                             Side = side.ToString()
                         });
                     }
-                });
+                }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.AboveNormal);
                 tasks.Add(task);
-                task.Start();
             }
             Task.WaitAll(tasks.ToArray());
             return infos.ToList();

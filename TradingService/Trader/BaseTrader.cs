@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Utils;
 using Utils.Candles.Models;
@@ -51,7 +52,9 @@ namespace TradingService.Trader
                     Console.WriteLine("Unprovided message");
                     return;
                 }
-                new Task(() => HandleMessage(message.Type, e.Data)).Start();
+                Task.Factory.StartNew(() => {
+                    HandleMessage(message.Type, e.Data);
+                }, CancellationToken.None, TaskCreationOptions.None, PriorityScheduler.Highest);
             }
         }
 
@@ -66,7 +69,7 @@ namespace TradingService.Trader
                     var canEnter = false;
                     lock (candleUpdateLock)
                     {
-                        canEnter = TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies);
+                        canEnter = TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles);
                         candles = Tools.DeepCopy(_candles);
                     }
                     if (canEnter)
@@ -97,19 +100,19 @@ namespace TradingService.Trader
                     }
                     var watch = new Stopwatch();
                     watch.Start();
-                    foreach (var strategyNames in _strategies.Keys)
-                    {
-                        var strategy = _strategies[strategyNames];
-                        strategy.SetupIndicators(candles);
-                        for(var i = 178; i < 800; i++)
-                        {
-                            var infos = strategy.EntryStrategy.EnterTrade(candles, i);
-                            foreach(var info in infos)
-                            {
-                                Console.WriteLine("{3}: Entered Trade on {0} with Stop = {1} and TP = {2}", info.Symbol, info.StopLoss, info.TakeProfit, info.Opened);        //NOTE: Wie komme ich an aktuellen Preis? :)
-                            }
-                        }
-                    }
+                    //foreach (var strategyNames in _strategies.Keys)
+                    //{
+                    //    var strategy = _strategies[strategyNames];
+                    //    strategy.SetupIndicators(candles);
+                    //    for (var i = 178; i < 800; i++)
+                    //    {
+                    //        var infos = strategy.EntryStrategy.EnterTrade(candles, i);
+                    //        foreach (var info in infos)
+                    //        {
+                    //            Console.WriteLine("{3}: Entered Trade on {0} with Stop = {1} and TP = {2}", info.Symbol, info.StopLoss, info.TakeProfit, info.Opened);        //NOTE: Wie komme ich an aktuellen Preis? :)
+                    //        }
+                    //    }
+                    //}
                     watch.Stop();
                     Console.WriteLine("NEEDED {0}s for Backtest", watch.ElapsedMilliseconds / 1000);
                     break;

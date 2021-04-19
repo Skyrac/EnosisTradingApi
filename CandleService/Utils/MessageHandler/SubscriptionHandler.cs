@@ -31,7 +31,7 @@ namespace CandleService.Utils.MessageHandler
                     {
                         tasks.Add(exchange.GetKlinesAsync(symbolItem.Symbol, intervalItem.Interval, message.RequiredCandles, null, null));
                     }
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(400);
                 }
                 await Task.WhenAll(tasks);
                 var candles = new List<IntervalSymbols>();

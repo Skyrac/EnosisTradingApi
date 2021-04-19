@@ -35,7 +35,7 @@ namespace Utils.Strategies.Models
         }
 
 
-        public override bool IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
+        public override StrategyReturnModel IsTrue(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
             var sentence = "";
             var context = new ExpressionContext();
@@ -44,14 +44,14 @@ namespace Utils.Strategies.Models
                 var value = ConditionItems[i].GetValue(candles, index);
                 if(value == -1)
                 {
-                    return false;
+                    return StrategyReturnModel.False;
                 }
                 context.Variables.Add(name, value);
                 var operatorString = ConditionOperators.Count > i ? OperatorToString(ConditionOperators[i]) : "";
                 sentence = string.Format("{0} {1} {2} ", sentence, name, operatorString);
             }
 
-            return context.CompileGeneric<bool>(sentence).Evaluate();
+            return context.CompileGeneric<bool>(sentence).Evaluate() ? StrategyReturnModel.True : StrategyReturnModel.False;
             
         }
 
@@ -87,7 +87,7 @@ namespace Utils.Strategies.Models
             return "";
         }
 
-        public override decimal GetDecimal(ESide side, Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
+        public override StrategyReturnModel GetDecimal(ESide side, Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
             var sentence = "";
             var context = new ExpressionContext();
@@ -107,7 +107,7 @@ namespace Utils.Strategies.Models
             {
                 Console.WriteLine("ERROR CONVERTING EXPRESSION {0} TO DECIMAL", sentence);
             }
-            return result;
+            return new StrategyReturnModel() { Value = result };
         }
 
         public override List<ConditionItem> GetConditionItems()

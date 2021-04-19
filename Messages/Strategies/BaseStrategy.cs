@@ -199,6 +199,10 @@ namespace Utils.Strategies
                     var candle = index == -1 ? symbolCandles.Last() : symbolCandles.ElementAt(index);
                     var stopLoss = StopLossConditions != null && StopLossConditions.ContainsKey(coreSymbol) && StopLossConditions[coreSymbol].ContainsKey(side) ? StopLossConditions[coreSymbol][side].GetDecimal(side, candles, index).Value : -1;
                     var takeProfit = TakeProfitConditions != null && TakeProfitConditions.ContainsKey(coreSymbol) && TakeProfitConditions[coreSymbol].ContainsKey(side) ? TakeProfitConditions[coreSymbol][side].GetDecimal(side, candles, index).Value : -1;
+                    if(stopLoss == -1 || takeProfit == -1)
+                    {
+                        continue;
+                    }
                     infos.Add(new TradeInfo()
                     {
                         Symbol = coreSymbol,

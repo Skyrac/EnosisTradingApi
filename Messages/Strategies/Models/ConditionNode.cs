@@ -94,10 +94,10 @@ namespace Utils.Strategies.Models
             //var variables = context.Variables;
             for (var i = 0; i < ConditionItems.Count; i++)
             {
-                //var name = ConditionItems[i].Name + "_" + i;
-                //variables.Add(name, ConditionItems[i].GetValue(candles, index));
+                var name = ConditionItems[i].Name + "_" + i;
+                context.Variables.Add(name, ConditionItems[i].GetValue(candles, index));
                 var operatorString = ConditionOperators.Count > i ? OperatorToString(ConditionOperators[i]) : "";
-                sentence = string.Format("{0} {1} {2} ", sentence, ConditionItems[i].GetValue(candles, index), operatorString);
+                sentence = string.Format("{0} {1} {2} ", sentence, name, operatorString);
             }
             var result = new decimal(-1);
             try

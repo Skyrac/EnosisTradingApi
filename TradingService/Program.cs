@@ -27,12 +27,12 @@ namespace TradingService
             }
             trader.AddStrategy(new Strategy()
             {
-                RequiredCandles = 400,
+                RequiredCandles = 2000,
                 Name = "EmaCross",
                 BalancePerTrade = 10,
                 EntryStrategy = strategy
             });
-            Console.ReadKey();
+            Console.ReadLine();
         }
 
         private static ConditionSequence GenerateStopLoss(ESide side, string symbol, KlineInterval interval)
@@ -118,7 +118,7 @@ namespace TradingService
         }
         private static ConditionSequence GenerateShortCondition(string symbol, KlineInterval interval)
         {
-            var condition = new ConditionSequence();
+            var condition = new ConditionSequence(interval, symbol);
             var subCondition = new ConditionSequence();
             var conditionNode = new ConditionNode(new List<ConditionItem>(), new List<EConditionOperator>());
 
@@ -310,7 +310,7 @@ namespace TradingService
         }
         private static ConditionSequence GenerateLongCondition(string symbol, KlineInterval interval)
         {
-            var condition = new ConditionSequence();
+            var condition = new ConditionSequence(interval, symbol);
             var subCondition = new ConditionSequence();
             var conditionNode = new ConditionNode(new List<ConditionItem>(), new List<EConditionOperator>());
 

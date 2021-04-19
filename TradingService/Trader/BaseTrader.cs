@@ -85,7 +85,7 @@ namespace TradingService.Trader
                             var infos = strategy.EntryStrategy.EnterTrade(_candles, i);
                             foreach(var info in infos)
                             {
-                                Console.WriteLine("Entered Trade on {0} with Stop = {1} and TP = {2}", info.Symbol, info.StopLoss, info.TakeProfit);        //NOTE: Wie komme ich an aktuellen Preis? :)
+                                Console.WriteLine("{3}: Entered Trade on {0} with Stop = {1} and TP = {2}", info.Symbol, info.StopLoss, info.TakeProfit, info.Opened);        //NOTE: Wie komme ich an aktuellen Preis? :)
                             }
                         }
                     }

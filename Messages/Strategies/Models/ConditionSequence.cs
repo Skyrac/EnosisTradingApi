@@ -1,4 +1,5 @@
 ﻿using Binance.Net.Enums;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,13 @@ namespace Utils.Strategies.Models
         public KlineInterval CoreInterval { get; set; }
         public string CoreSymbol { get; set; }
         public List<Condition> Conditions { get; set; }
+        [JsonConstructor]
+        public ConditionSequence() { }
+        public ConditionSequence(KlineInterval coreInterval, string coreSymbol)
+        {
+            CoreInterval = coreInterval;
+            CoreSymbol = coreSymbol;
+        }
 
         public Condition AddCondition(Condition node)
         {

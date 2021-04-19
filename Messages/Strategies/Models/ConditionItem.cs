@@ -27,7 +27,7 @@ namespace Utils.Strategies.Models
             {
                 return Value;
             }
-            if (!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol))
+            if (Symbol == null || !candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol))
             {
                 return -1;
             }
@@ -56,7 +56,7 @@ namespace Utils.Strategies.Models
         }
         public void GenerateIndicators(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int requiredCandles)
         {
-            if(!candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol) || Indicator == null)
+            if(Symbol == null || !candles.ContainsKey(Interval) || !candles[Interval].ContainsKey(Symbol) || Indicator == null)
             {
                 return;
             }

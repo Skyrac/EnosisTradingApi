@@ -27,7 +27,7 @@ namespace TradingService
             }
             trader.AddStrategy(new Strategy()
             {
-                RequiredCandles = 2000,
+                RequiredCandles = 800,
                 Name = "EmaCross",
                 BalancePerTrade = 10,
                 EntryStrategy = strategy

@@ -2,7 +2,9 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Utils;
 using Utils.Candles.Models;
 using Utils.Clients;
@@ -10,6 +12,7 @@ using Utils.Enums;
 using Utils.Messages.Enums;
 using Utils.Messages.Models;
 using Utils.Strategies;
+using Utils.Tools;
 using Utils.Trading;
 using Utils.Trading.Enums;
 using WebSocketSharp;
@@ -26,6 +29,7 @@ namespace TradingService.Trader
         private Dictionary<string, BaseClient> _registeredUsers = new Dictionary<string, BaseClient>();
         private BaseClient _defaultClient;
         private const string keyString = "{0}_{1}";
+        private Object entranceLock = new object();
         private Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> _candles = new Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>>();
         private Dictionary<string, int> _requiredCandlesPerSymbol = new Dictionary<string, int>();
         private WebSocket _socket = new WebSocket("ws://localhost:4300/subscribe");
@@ -46,12 +50,13 @@ namespace TradingService.Trader
                     Console.WriteLine("Unprovided message");
                     return;
                 }
-                HandleMessage(message.Type, e.Data);
+                new Task(() => HandleMessage(message.Type, e.Data)).Start();
             }
         }
 
         private void HandleMessage(EMessage type, string rawData)
         {
+            Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles = null;
             switch (type)
             {
                 case EMessage.CandleServiceSubscription:
@@ -60,14 +65,19 @@ namespace TradingService.Trader
                     if(TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles, _strategies))
                     {
                         Console.WriteLine("Check for Entrance");
-                        foreach(var strategyNames in _strategies.Keys)
+                        lock (entranceLock)
                         {
-                            var strategy = _strategies[strategyNames];
-                            strategy.SetupIndicators(_candles);
-                            var tradeInfos = strategy.EntryStrategy.EnterTrade(_candles, -1);
-                            foreach(var info in tradeInfos)
+                            foreach (var strategyNames in _strategies.Keys)
                             {
-                                Console.WriteLine("{0}: ENTER TRADE ON {1}", info.Opened, info.Symbol);
+                                var strategy = _strategies[strategyNames];
+
+                                candles = Tools.DeepCopy(_candles);
+                                strategy.SetupIndicators(candles);
+                                var tradeInfos = strategy.EntryStrategy.EnterTrade(candles, -1);
+                                foreach (var info in tradeInfos)
+                                {
+                                    Console.WriteLine("{0}: ENTER TRADE ON {1}", info.Opened, info.Symbol);
+                                }
                             }
                         }
                     }
@@ -75,20 +85,24 @@ namespace TradingService.Trader
                     break;
                 case EMessage.CandleServiceHistoryCandles:
                     TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);
-
+                    candles = Tools.DeepCopy(_candles);
+                    var watch = new Stopwatch();
+                    watch.Start();
                     foreach (var strategyNames in _strategies.Keys)
                     {
                         var strategy = _strategies[strategyNames];
-                        strategy.SetupIndicators(_candles);
-                        for(var i = 178; i < 399; i++)
+                        strategy.SetupIndicators(candles);
+                        for(var i = 178; i < 800; i++)
                         {
-                            var infos = strategy.EntryStrategy.EnterTrade(_candles, i);
+                            var infos = strategy.EntryStrategy.EnterTrade(candles, i);
                             foreach(var info in infos)
                             {
                                 Console.WriteLine("{3}: Entered Trade on {0} with Stop = {1} and TP = {2}", info.Symbol, info.StopLoss, info.TakeProfit, info.Opened);        //NOTE: Wie komme ich an aktuellen Preis? :)
                             }
                         }
                     }
+                    watch.Stop();
+                    Console.WriteLine("NEEDED {0}s for Backtest", watch.ElapsedMilliseconds / 1000);
                     break;
                 default:
                     Console.WriteLine("Recieved Message with Unknown EMessage-Type");

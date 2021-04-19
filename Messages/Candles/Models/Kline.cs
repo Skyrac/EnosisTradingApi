@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 namespace Utils.Candles.Models
 {
+    [Serializable]
     public class Kline : Quote
     {
         public DateTime CloseTime

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Utils.Candles.Models;
 using Utils.Strategies.Models;
 using Utils.Trading;
@@ -177,44 +178,52 @@ namespace Utils.Strategies
 
         public List<TradeInfo> EnterTrade(Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles, int index = -1)
         {
-            var infos = new List<TradeInfo>();
+            var infos = new ConcurrentQueue<TradeInfo>();
+            var tasks = new List<Task>();
             foreach(var coreSymbol in LongConditions.Keys)
             {
-                var side = ESide.Long;
-                StrategyReturnModel result = null;
-                if(LongConditions != null && LongConditions.ContainsKey(coreSymbol) && (result = LongConditions[coreSymbol].IsTrue(candles, index)).IsTrue)
+                var task = new Task(() =>
                 {
-                    side = ESide.Long;
-                } else if(ShortConditions != null && ShortConditions.ContainsKey(coreSymbol) && (result = ShortConditions[coreSymbol].IsTrue(candles, index)).IsTrue)
-                {
-                    side = ESide.Short;
-                }
-                if (result.IsTrue && candles.ContainsKey(result.CoreInterval) && candles[result.CoreInterval].ContainsKey(result.CoreSymbol))
-                {
-                    var symbolCandles = candles[result.CoreInterval][result.CoreSymbol];
-                    if(symbolCandles.Count < index)
+                    var side = ESide.Long;
+                    StrategyReturnModel result = null;
+                    if (LongConditions != null && LongConditions.ContainsKey(coreSymbol) && (result = LongConditions[coreSymbol].IsTrue(candles, index)).IsTrue)
                     {
-                        continue;
+                        side = ESide.Long;
                     }
-                    var candle = index == -1 ? symbolCandles.Last() : symbolCandles.ElementAt(index);
-                    var stopLoss = StopLossConditions != null && StopLossConditions.ContainsKey(coreSymbol) && StopLossConditions[coreSymbol].ContainsKey(side) ? StopLossConditions[coreSymbol][side].GetDecimal(side, candles, index).Value : -1;
-                    var takeProfit = TakeProfitConditions != null && TakeProfitConditions.ContainsKey(coreSymbol) && TakeProfitConditions[coreSymbol].ContainsKey(side) ? TakeProfitConditions[coreSymbol][side].GetDecimal(side, candles, index).Value : -1;
-                    if(stopLoss == -1 || takeProfit == -1)
+                    else if (ShortConditions != null && ShortConditions.ContainsKey(coreSymbol) && (result = ShortConditions[coreSymbol].IsTrue(candles, index)).IsTrue)
                     {
-                        continue;
+                        side = ESide.Short;
                     }
-                    infos.Add(new TradeInfo()
+                    if (result.IsTrue && candles.ContainsKey(result.CoreInterval) && candles[result.CoreInterval].ContainsKey(result.CoreSymbol))
                     {
-                        Symbol = coreSymbol,
-                        StopLoss = stopLoss,
-                        TakeProfit = takeProfit,
-                        EstimatedEntry = candle.Value.Close,
-                        Opened = candle.Key,
-                        Side = side.ToString()
-                    });
-                }
+                        var symbolCandles = candles[result.CoreInterval][result.CoreSymbol];
+                        if (symbolCandles.Count < index)
+                        {
+                            return;
+                        }
+                        var candle = index == -1 ? symbolCandles.Last() : symbolCandles.ElementAt(index);
+                        var stopLoss = StopLossConditions != null && StopLossConditions.ContainsKey(coreSymbol) && StopLossConditions[coreSymbol].ContainsKey(side) ? StopLossConditions[coreSymbol][side].GetDecimal(side, candles, index).Value : -1;
+                        var takeProfit = TakeProfitConditions != null && TakeProfitConditions.ContainsKey(coreSymbol) && TakeProfitConditions[coreSymbol].ContainsKey(side) ? TakeProfitConditions[coreSymbol][side].GetDecimal(side, candles, index).Value : -1;
+                        if (stopLoss == -1 || takeProfit == -1)
+                        {
+                            return;
+                        }
+                        infos.Enqueue(new TradeInfo()
+                        {
+                            Symbol = coreSymbol,
+                            StopLoss = stopLoss,
+                            TakeProfit = takeProfit,
+                            EstimatedEntry = candle.Value.Close,
+                            Opened = candle.Key,
+                            Side = side.ToString()
+                        });
+                    }
+                });
+                tasks.Add(task);
+                task.Start();
             }
-            return infos;
+            Task.WaitAll(tasks.ToArray());
+            return infos.ToList();
         }
 
         public virtual ECloseReason CloseLong(TradeInfo info, ConcurrentDictionary<KlineInterval, ConcurrentDictionary<string, Kline>> candles, int index = -1)

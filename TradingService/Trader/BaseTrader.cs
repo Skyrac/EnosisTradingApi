@@ -69,12 +69,11 @@ namespace TradingService.Trader
                     var canEnter = false;
                     lock (candleUpdateLock)
                     {
-                        canEnter = TradingMessageHandler.HandleCandleServiceUpdateAndCheckForNewCandle(rawData, ref _candles);
+                        canEnter = TradingMessageHandler.HandleCandleServiceUpdateAndCheckForFinalCandle(rawData, ref _candles);
                         candles = Tools.DeepCopy(_candles);
                     }
                     if (canEnter)
                     {
-                        Console.WriteLine("Check for Entrance");
                         lock (entranceLock)
                         {
                             foreach (var strategyNames in _strategies.Keys)
@@ -98,8 +97,8 @@ namespace TradingService.Trader
                         TradingMessageHandler.HandleCandleServiceHistoryCandles(rawData, ref _candles, _strategies);
                         candles = Tools.DeepCopy(_candles);
                     }
-                    var watch = new Stopwatch();
-                    watch.Start();
+                    //var watch = new Stopwatch();
+                    //watch.Start();
                     //foreach (var strategyNames in _strategies.Keys)
                     //{
                     //    var strategy = _strategies[strategyNames];
@@ -113,8 +112,8 @@ namespace TradingService.Trader
                     //        }
                     //    }
                     //}
-                    watch.Stop();
-                    Console.WriteLine("NEEDED {0}s for Backtest", watch.ElapsedMilliseconds / 1000);
+                    //watch.Stop();
+                    //Console.WriteLine("NEEDED {0}s for Backtest", watch.ElapsedMilliseconds / 1000);
                     break;
                 default:
                     Console.WriteLine("Recieved Message with Unknown EMessage-Type");

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TradingService.Trader;
 using Utils.Clients;
 using Utils.Enums;
+using Utils.Indicators.Enums;
 using Utils.Indicators.Models;
 using Utils.Strategies;
 using Utils.Strategies.Enums;
@@ -27,7 +28,7 @@ namespace TradingService
             }
             trader.AddStrategy(new Strategy()
             {
-                RequiredCandles = 800,
+                RequiredCandles = 180,
                 Name = "EmaCross",
                 BalancePerTrade = 10,
                 EntryStrategy = strategy
@@ -47,7 +48,8 @@ namespace TradingService
                         Name = "Close",
                         Interval = interval,
                         Symbol = symbol,
-                        Index = 0
+                        Index = 0,
+                        Type = EIndicator.Close
                     },
                     new ConditionItem()
                     {
@@ -55,11 +57,13 @@ namespace TradingService
                         Interval = interval,
                         Symbol = symbol,
                         Index = 0,
+                        Type = EIndicator.Atr,
                         Indicator = new IndicatorProperties("Atr", "GetAtr", 8)
                     },
                     new ConditionItem()
                     {
                         Name = "Value",
+                        Type = EIndicator.Value,
                         Value = 3
                     }
                 }, new List<EConditionOperator>()
@@ -85,7 +89,8 @@ namespace TradingService
                         Name = "Close",
                         Interval = interval,
                         Symbol = symbol,
-                        Index = 0
+                        Index = 0,
+                        Type = EIndicator.Close
                     },
                     new ConditionItem()
                     {
@@ -93,17 +98,20 @@ namespace TradingService
                         Interval = interval,
                         Symbol = symbol,
                         Index = 0,
-                        Indicator = new IndicatorProperties("Atr", "GetAtr", 8)
+                        Indicator = new IndicatorProperties("Atr", "GetAtr", 8),
+                        Type = EIndicator.Atr
                     },
                     new ConditionItem()
                     {
                         Name = "Value",
-                        Value = 3
+                        Value = 3,
+                        Type = EIndicator.Value
                     },
                     new ConditionItem()
                     {
                         Name = "Value",
-                        Value = riskRewardRatio
+                        Value = riskRewardRatio,
+                        Type = EIndicator.Value
                     }
                 }, new List<EConditionOperator>()
                 {
@@ -128,14 +136,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Adx", "GetAdx", 9)
+                Indicator = new IndicatorProperties("Adx", "GetAdx", 9),
+                Type = EIndicator.Adx
             }, EConditionOperator.GreaterThan, new ConditionItem()
             {
                 Name = "Value",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Value = 25
+                Value = 25,
+                Type = EIndicator.Value
             }, null);
 
             conditionNode.AddCondition(new ConditionItem()
@@ -144,14 +154,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Mdi", "GetAdx", 9)
+                Indicator = new IndicatorProperties("Mdi", "GetAdx", 9),
+                Type = EIndicator.Adx
             }, EConditionOperator.GreaterThan, new ConditionItem()
             {
                 Name = "ADX_9",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Pdi", "GetAdx", 9)
+                Indicator = new IndicatorProperties("Pdi", "GetAdx", 9),
+                Type = EIndicator.Adx
             }, EConditionOperator.And);
 
             conditionNode.AddCondition(new ConditionItem()
@@ -160,13 +172,15 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("VolSma", "GetVolSma", 48)
+                Indicator = new IndicatorProperties("VolSma", "GetVolSma", 48),
+                Type = EIndicator.VolSma
             }, EConditionOperator.LowerThan, new ConditionItem()
             {
                 Name = "Volume",
                 Interval = interval,
                 Symbol = symbol,
-                Index = 0
+                Index = 0,
+                Type = EIndicator.Volume
             }, EConditionOperator.And);
 
             conditionNode.AddCondition(new ConditionItem()
@@ -175,14 +189,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 8)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 8),
+                Type = EIndicator.Ema
             }, EConditionOperator.LowerThan, new ConditionItem()
             {
                 Name = "EMA_21",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                Type = EIndicator.Ema
             }, EConditionOperator.And);
 
             conditionNode.AddCondition(
@@ -192,7 +208,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.LowerThan,
                 new ConditionItem()
@@ -201,7 +218,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.And
             );
@@ -212,7 +230,8 @@ namespace TradingService
                     Name = "Close",
                     Interval = interval,
                     Symbol = symbol,
-                    Index = 0
+                    Index = 0,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.LowerThan,
                 new ConditionItem()
@@ -221,6 +240,7 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 24,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.And
             );
@@ -232,7 +252,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.GreaterThan,
                 new ConditionItem()
@@ -241,6 +262,7 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.And
             );
@@ -254,14 +276,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 1,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 8)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 8),
+                Type = EIndicator.Ema
             }, EConditionOperator.GreaterThan, new ConditionItem()
             {
                 Name = "EMA_21",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 1,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                Type = EIndicator.Ema
             }, null);
 
             conditionNode2.AddCondition(
@@ -271,7 +295,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.GreaterThan,
                 new ConditionItem()
@@ -280,7 +305,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.Or
             );
@@ -292,7 +318,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.LowerThan,
                 new ConditionItem()
@@ -301,6 +328,7 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.Or
             );
@@ -320,14 +348,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Adx", "GetAdx", 9)
+                Indicator = new IndicatorProperties("Adx", "GetAdx", 9),
+                Type = EIndicator.Adx
             }, EConditionOperator.GreaterThan, new ConditionItem()
             {
                 Name = "Value",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Value = 25
+                Value = 25,
+                Type = EIndicator.Value
             }, null);
 
             conditionNode.AddCondition(new ConditionItem()
@@ -336,14 +366,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Mdi", "GetAdx", 9)
+                Indicator = new IndicatorProperties("Mdi", "GetAdx", 9),
+                Type = EIndicator.Adx
             }, EConditionOperator.LowerThan, new ConditionItem()
             {
                 Name = "ADX_9",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Pdi", "GetAdx", 9)
+                Indicator = new IndicatorProperties("Pdi", "GetAdx", 9),
+                Type = EIndicator.Adx
             }, EConditionOperator.And);
 
             conditionNode.AddCondition(new ConditionItem()
@@ -352,13 +384,15 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("VolSma", "GetVolSma", 48)
+                Indicator = new IndicatorProperties("VolSma", "GetVolSma", 48),
+                Type = EIndicator.VolSma
             }, EConditionOperator.LowerThan, new ConditionItem()
             {
                 Name = "Volume",
                 Interval = interval,
                 Symbol = symbol,
-                Index = 0
+                Index = 0,
+                Type = EIndicator.Volume
             }, EConditionOperator.And);
 
             conditionNode.AddCondition(new ConditionItem()
@@ -367,14 +401,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 8)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 8),
+                Type = EIndicator.Ema
             }, EConditionOperator.GreaterThan, new ConditionItem()
             {
                 Name = "EMA_21",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 0,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                Type = EIndicator.Ema
             }, EConditionOperator.And);
 
             conditionNode.AddCondition(
@@ -384,7 +420,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.GreaterThan,
                 new ConditionItem()
@@ -393,7 +430,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.And
             );
@@ -404,7 +442,8 @@ namespace TradingService
                     Name = "Close",
                     Interval = interval,
                     Symbol = symbol,
-                    Index = 0
+                    Index = 0,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.GreaterThan,
                 new ConditionItem()
@@ -413,6 +452,7 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 24,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.And
             );
@@ -424,7 +464,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.LowerThan,
                 new ConditionItem()
@@ -433,6 +474,7 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 0,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.And
             );
@@ -446,14 +488,16 @@ namespace TradingService
                 Interval = interval,
                 Symbol = symbol,
                 Index = 1,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 8)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 8),
+                Type = EIndicator.Ema
             }, EConditionOperator.LowerThan, new ConditionItem()
             {
                 Name = "EMA_21",
                 Interval = interval,
                 Symbol = symbol,
                 Index = 1,
-                Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                Type = EIndicator.Ema
             }, null);
 
             conditionNode2.AddCondition(
@@ -463,7 +507,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 21)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 21),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.LowerThan,
                 new ConditionItem()
@@ -472,7 +517,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.Or
             );
@@ -484,7 +530,8 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
-                    Indicator = new IndicatorProperties("Ema", "GetEma", 34)
+                    Indicator = new IndicatorProperties("Ema", "GetEma", 34),
+                    Type = EIndicator.Ema
                 },
                 EConditionOperator.GreaterThan,
                 new ConditionItem()
@@ -493,6 +540,7 @@ namespace TradingService
                     Interval = interval,
                     Symbol = symbol,
                     Index = 1,
+                    Type = EIndicator.Close
                 },
                 EConditionOperator.Or
             );

@@ -42,7 +42,7 @@ namespace Utils.Trading
             }
         }
 
-        public static bool HandleCandleServiceUpdateAndCheckForNewCandle(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
+        public static bool HandleCandleServiceUpdateAndCheckForFinalCandle(string rawData, ref Dictionary<KlineInterval, Dictionary<string, Dictionary<DateTime, Kline>>> candles)
         {
             var date = DateTime.Now;
             var data = JsonConvert.DeserializeObject<CandleServiceUpdateMessage>(rawData);
@@ -70,14 +70,12 @@ namespace Utils.Trading
                             candles[intervalCandle.Interval][symbolCandle.Symbol][symbolCandle.Kline.Date].Update(symbolCandle.Kline);
                             if(symbolCandle.Kline.IsFinal)
                             {
-                                Console.WriteLine("{0}: Recieved Final Candle on {1} - {2}", DateTime.Now,symbolCandle.Symbol, intervalCandle.Interval );
+                                newCandle = true;
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Recieved new candle on {0} - {1} at {2}, Recieved Message at {3}", symbolCandle.Symbol, intervalCandle.Interval, DateTime.Now, date);
                             candles[intervalCandle.Interval][symbolCandle.Symbol].Add(symbolCandle.Kline.Date, symbolCandle.Kline);
-                            newCandle = true;
                         }
                     }
                 }
